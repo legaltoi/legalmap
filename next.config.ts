@@ -15,9 +15,9 @@ const cspHeader = `
   worker-src 'self' blob:;
   child-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob:;
-  font-src 'self' data:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+  img-src 'self' data: blob: https://*.openfreemap.org https://demotiles.maplibre.org;
+  font-src 'self' data: https://*.openfreemap.org https://demotiles.maplibre.org;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.openfreemap.org https://demotiles.maplibre.org;
   frame-ancestors 'none';
   base-uri 'self';
   form-action 'self';

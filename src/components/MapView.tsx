@@ -77,8 +77,11 @@ export function MapView({
       : "";
   const pmtilesUrl = `pmtiles://${basePath}/tiles/nantes.pmtiles`;
 
-  // Style cartographique vectoriel sombre 100 % hors-ligne (OLED optimisé)
-  const darkMapStyle: maplibregl.StyleSpecification = {
+  // Style vectoriel en ligne : OpenFreeMap Dark (OpenMapTiles standard pour MapLibre GL)
+  const onlineStyleUrl = "https://tiles.openfreemap.org/styles/dark";
+
+  // Style cartographique vectoriel sombre 100 % hors-ligne (mode avion / fallback local)
+  const offlineDarkStyle: maplibregl.StyleSpecification = {
     version: 8,
     name: "LegalMaps Offline Dark Vector",
     sources: {
@@ -171,15 +174,36 @@ export function MapView({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+    const initialStyle = isOnline ? onlineStyleUrl : offlineDarkStyle;
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: darkMapStyle,
+      style: initialStyle,
       center: nantesData.center as [number, number],
       zoom: nantesData.defaultZoom,
       minZoom: nantesData.minZoom,
       maxZoom: nantesData.maxZoom,
       attributionControl: false,
     });
+
+    // Contrôles de navigation officiels MapLibre GL
+    map.addControl(
+      new maplibregl.NavigationControl({
+        showCompass: true,
+        showZoom: true,
+        visualizePitch: true,
+      }),
+      "top-right"
+    );
+
+    map.addControl(
+      new maplibregl.ScaleControl({
+        maxWidth: 100,
+        unit: "metric",
+      }),
+      "bottom-left"
+    );
 
     map.addControl(
       new maplibregl.AttributionControl({
@@ -188,9 +212,20 @@ export function MapView({
       "bottom-right"
     );
 
-    // Événement d'erreur non bloquant
+    let hasFallenBack = false;
+    // Événement d'erreur non bloquant avec bascule automatique vers le style hors-ligne
     map.on("error", (e) => {
       console.warn("[MapLibre Event]:", e);
+      if (
+        !hasFallenBack &&
+        (e.error?.message?.includes("Failed to fetch") ||
+          e.error?.message?.includes("NetworkError") ||
+          (e as any).status === 404)
+      ) {
+        hasFallenBack = true;
+        console.info("[LegalMaps] Bascule automatique sur le style hors-ligne local.");
+        map.setStyle(offlineDarkStyle);
+      }
     });
 
     const triggerResize = () => {
@@ -199,88 +234,98 @@ export function MapView({
       }
     };
 
-    map.on("load", () => {
+    const attachLayersAndPois = () => {
       setMapLoaded(true);
       triggerResize();
 
       // 1. Ajout de la source du parcours officiel GeoJSON de Nantes
-      map.addSource("official-route-source", {
-        type: "geojson",
-        data: nantesData.officialRoute as any,
-      });
+      if (!map.getSource("official-route-source")) {
+        map.addSource("official-route-source", {
+          type: "geojson",
+          data: nantesData.officialRoute as any,
+        });
+      }
 
       // Lueur d'arrière-plan du tracé (Halo Cyan)
-      map.addLayer({
-        id: "route-halo",
-        type: "line",
-        source: "official-route-source",
-        filter: ["==", "$type", "LineString"],
-        layout: {
-          "line-cap": "round",
-          "line-join": "round",
-        },
-        paint: {
-          "line-color": "#06b6d4",
-          "line-width": 10,
-          "line-opacity": 0.3,
-          "line-blur": 4,
-        },
-      });
+      if (!map.getLayer("route-halo")) {
+        map.addLayer({
+          id: "route-halo",
+          type: "line",
+          source: "official-route-source",
+          filter: ["==", "$type", "LineString"],
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": "#06b6d4",
+            "line-width": 10,
+            "line-opacity": 0.35,
+            "line-blur": 4,
+          },
+        });
+      }
 
       // Ligne principale du tracé officiel
-      map.addLayer({
-        id: "route-main",
-        type: "line",
-        source: "official-route-source",
-        filter: ["==", "$type", "LineString"],
-        layout: {
-          "line-cap": "round",
-          "line-join": "round",
-        },
-        paint: {
-          "line-color": "#22d3ee",
-          "line-width": 4.5,
-          "line-dasharray": [1, 0],
-        },
-      });
+      if (!map.getLayer("route-main")) {
+        map.addLayer({
+          id: "route-main",
+          type: "line",
+          source: "official-route-source",
+          filter: ["==", "$type", "LineString"],
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": "#22d3ee",
+            "line-width": 4.5,
+          },
+        });
+      }
 
       // 2. Création des POIs statiques (Hôpitaux, Pharmacies, Points d'Eau)
-      nantesData.pois.forEach((poi) => {
-        const el = document.createElement("div");
-        el.className = "poi-marker cursor-pointer";
-        el.setAttribute("title", poi.name);
+      if (poiMarkersRef.current.length === 0) {
+        nantesData.pois.forEach((poi) => {
+          const el = document.createElement("div");
+          el.className = "poi-marker cursor-pointer";
+          el.setAttribute("title", poi.name);
 
-        let iconEmoji = "💧";
-        let bgClass = "bg-blue-600/80 border-blue-400";
-        if (poi.category === "HOSPITAL") {
-          iconEmoji = "🏥";
-          bgClass = "bg-red-600/90 border-red-300";
-        } else if (poi.category === "PHARMACY") {
-          iconEmoji = "💊";
-          bgClass = "bg-emerald-600/80 border-emerald-300";
-        } else if (poi.category === "EMERGENCY") {
-          iconEmoji = "⚖️";
-          bgClass = "bg-purple-600/80 border-purple-300";
-        }
+          let iconEmoji = "💧";
+          let bgClass = "bg-blue-600/80 border-blue-400";
+          if (poi.category === "HOSPITAL") {
+            iconEmoji = "🏥";
+            bgClass = "bg-red-600/90 border-red-300";
+          } else if (poi.category === "PHARMACY") {
+            iconEmoji = "💊";
+            bgClass = "bg-emerald-600/80 border-emerald-300";
+          } else if (poi.category === "EMERGENCY") {
+            iconEmoji = "⚖️";
+            bgClass = "bg-purple-600/80 border-purple-300";
+          }
 
-        el.innerHTML = `
-          <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 ${bgClass} shadow-lg text-sm select-none transform hover:scale-125 transition-transform">
-            ${iconEmoji}
-          </div>
-        `;
+          el.innerHTML = `
+            <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 ${bgClass} shadow-lg text-sm select-none transform hover:scale-125 transition-transform">
+              ${iconEmoji}
+            </div>
+          `;
 
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          setSelectedPoi(poi as POI);
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            setSelectedPoi(poi as POI);
+          });
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat(poi.coordinates as [number, number])
+            .addTo(map);
+
+          poiMarkersRef.current.push(marker);
         });
+      }
+    };
 
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat(poi.coordinates as [number, number])
-          .addTo(map);
-
-        poiMarkersRef.current.push(marker);
-      });
-    });
+    map.on("load", attachLayersAndPois);
+    map.on("styledata", attachLayersAndPois);
 
     // Clic sur la carte (pour le mode sélection d'un point)
     map.on("click", (e) => {

@@ -140,96 +140,131 @@ export default function AdminPage() {
         : "";
     const pmtilesUrl = `pmtiles://${basePath}/tiles/nantes.pmtiles`;
 
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          "nantes-pmtiles": {
-            type: "vector",
-            url: pmtilesUrl,
-          },
-          "nantes-offline-base": {
-            type: "geojson",
-            data: nantesBaseGeoJson as any,
+    const onlineStyleUrl = "https://tiles.openfreemap.org/styles/dark";
+
+    const offlineDarkStyle: maplibregl.StyleSpecification = {
+      version: 8,
+      name: "LegalMaps Offline Dark Vector",
+      sources: {
+        "nantes-pmtiles": {
+          type: "vector",
+          url: pmtilesUrl,
+        },
+        "nantes-offline-base": {
+          type: "geojson",
+          data: nantesBaseGeoJson as any,
+        },
+      },
+      layers: [
+        {
+          id: "background",
+          type: "background",
+          paint: {
+            "background-color": "#060608",
           },
         },
-        layers: [
-          {
-            id: "background",
-            type: "background",
-            paint: {
-              "background-color": "#060608",
-            },
+        {
+          id: "water-fill",
+          type: "fill",
+          source: "nantes-offline-base",
+          filter: ["==", "class", "water"],
+          paint: {
+            "fill-color": "#081321",
+            "fill-opacity": 0.95,
           },
-          {
-            id: "water-fill",
-            type: "fill",
-            source: "nantes-offline-base",
-            filter: ["==", "class", "water"],
-            paint: {
-              "fill-color": "#081321",
-              "fill-opacity": 0.95,
-            },
+        },
+        {
+          id: "water-outline",
+          type: "line",
+          source: "nantes-offline-base",
+          filter: ["==", "class", "water"],
+          paint: {
+            "line-color": "#112a45",
+            "line-width": 1.5,
           },
-          {
-            id: "water-outline",
-            type: "line",
-            source: "nantes-offline-base",
-            filter: ["==", "class", "water"],
-            paint: {
-              "line-color": "#112a45",
-              "line-width": 1.5,
-            },
+        },
+        {
+          id: "park-fill",
+          type: "fill",
+          source: "nantes-offline-base",
+          filter: ["==", "class", "park"],
+          paint: {
+            "fill-color": "#07170f",
+            "fill-opacity": 0.8,
           },
-          {
-            id: "park-fill",
-            type: "fill",
-            source: "nantes-offline-base",
-            filter: ["==", "class", "park"],
-            paint: {
-              "fill-color": "#07170f",
-              "fill-opacity": 0.8,
-            },
+        },
+        {
+          id: "streets-secondary",
+          type: "line",
+          source: "nantes-offline-base",
+          filter: ["==", "class", "street"],
+          paint: {
+            "line-color": "#181824",
+            "line-width": 2.5,
           },
-          {
-            id: "streets-secondary",
-            type: "line",
-            source: "nantes-offline-base",
-            filter: ["==", "class", "street"],
-            paint: {
-              "line-color": "#181824",
-              "line-width": 2.5,
-            },
+        },
+        {
+          id: "streets-primary",
+          type: "line",
+          source: "nantes-offline-base",
+          filter: ["==", "class", "primary"],
+          paint: {
+            "line-color": "#252538",
+            "line-width": 4.5,
           },
-          {
-            id: "streets-primary",
-            type: "line",
-            source: "nantes-offline-base",
-            filter: ["==", "class", "primary"],
-            paint: {
-              "line-color": "#252538",
-              "line-width": 4.5,
-            },
+        },
+        {
+          id: "pmtiles-streets-layer",
+          type: "line",
+          source: "nantes-pmtiles",
+          "source-layer": "streets",
+          paint: {
+            "line-color": "#1f1f2e",
+            "line-width": 2,
           },
-          {
-            id: "pmtiles-streets-layer",
-            type: "line",
-            source: "nantes-pmtiles",
-            "source-layer": "streets",
-            paint: {
-              "line-color": "#1f1f2e",
-              "line-width": 2,
-            },
-          },
-        ],
-      },
+        },
+      ],
+    };
+
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+    const initialStyle = isOnline ? onlineStyleUrl : offlineDarkStyle;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: initialStyle,
       center: nantesData.center as [number, number],
       zoom: 14.5,
     });
 
+    map.addControl(
+      new maplibregl.NavigationControl({
+        showCompass: true,
+        showZoom: true,
+      }),
+      "top-right"
+    );
+
+    map.addControl(
+      new maplibregl.ScaleControl({
+        maxWidth: 100,
+        unit: "metric",
+      }),
+      "bottom-left"
+    );
+
+    let hasFallenBack = false;
     map.on("error", (e) => {
       console.warn("[Admin MapLibre Event]:", e);
+      if (
+        !hasFallenBack &&
+        (e.error?.message?.includes("Failed to fetch") ||
+          e.error?.message?.includes("NetworkError") ||
+          (e as any).status === 404)
+      ) {
+        hasFallenBack = true;
+        console.info("[LegalMaps Admin] Bascule automatique sur le style hors-ligne local.");
+        map.setStyle(offlineDarkStyle);
+      }
     });
 
     const triggerResize = () => {
@@ -238,25 +273,32 @@ export default function AdminPage() {
       }
     };
 
-    map.on("load", () => {
+    const attachAdminRoute = () => {
       triggerResize();
-      map.addSource("official-route", {
-        type: "geojson",
-        data: nantesData.officialRoute as any,
-      });
+      if (!map.getSource("official-route")) {
+        map.addSource("official-route", {
+          type: "geojson",
+          data: nantesData.officialRoute as any,
+        });
+      }
 
-      map.addLayer({
-        id: "route-line",
-        type: "line",
-        source: "official-route",
-        filter: ["==", "$type", "LineString"],
-        paint: {
-          "line-color": "#22d3ee",
-          "line-width": 4,
-          "line-opacity": 0.8,
-        },
-      });
-    });
+      if (!map.getLayer("route-line")) {
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "official-route",
+          filter: ["==", "$type", "LineString"],
+          paint: {
+            "line-color": "#22d3ee",
+            "line-width": 4,
+            "line-opacity": 0.8,
+          },
+        });
+      }
+    };
+
+    map.on("load", attachAdminRoute);
+    map.on("styledata", attachAdminRoute);
 
     map.on("click", (e) => {
       const lat = Math.round(e.lngLat.lat * 1000) / 1000;
