@@ -6,6 +6,7 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { ActionDock } from "@/components/ActionDock";
 import { LegalSheet } from "@/components/LegalSheet";
 import { LegalNotice } from "@/components/LegalNotice";
+import { SocialFeedModal, SocialFeedTriggerButton } from "@/components/feed/SocialFeedModal";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
 import { CortegeState, ReportCategory } from "@/types";
@@ -56,6 +57,7 @@ export default function HomePage() {
   // Modales d'information
   const [isLegalSheetOpen, setIsLegalSheetOpen] = useState(false);
   const [isLegalNoticeOpen, setIsLegalNoticeOpen] = useState(false);
+  const [isSocialFeedOpen, setIsSocialFeedOpen] = useState(false);
 
   // Mode de pointage direct sur carte
   const [activeCategoryToPoint, setActiveCategoryToPoint] = useState<ReportCategory | null>(null);
@@ -139,6 +141,7 @@ export default function HomePage() {
         pendingCount={pendingCount}
         onOpenLegalSheet={() => setIsLegalSheetOpen(true)}
         onOpenLegalNotice={() => setIsLegalNoticeOpen(true)}
+        onOpenSocialFeed={() => setIsSocialFeedOpen(true)}
         onRecenterCity={() => {
           // Rechargement doux de la vue centre
           const event = new CustomEvent("recenter-nantes");
@@ -158,7 +161,12 @@ export default function HomePage() {
         />
       </div>
 
-      {/* 3. Barre d'action rapide tactile (4 boutons légaux normalisés) */}
+      {/* 3. Bouton d'action flottant tactile : Flux Live #ManifNantes */}
+      <div className="fixed right-3 bottom-44 sm:bottom-40 z-20 pointer-events-auto">
+        <SocialFeedTriggerButton onClick={() => setIsSocialFeedOpen(true)} />
+      </div>
+
+      {/* 4. Barre d'action rapide tactile (4 boutons légaux normalisés) */}
       <ActionDock
         onTriggerReport={handleTriggerReport}
         userLocation={userLocation}
@@ -167,7 +175,7 @@ export default function HomePage() {
         isSolvingPoW={isSolvingPoW}
       />
 
-      {/* 4. Modales de fiches réflexes et mentions légales */}
+      {/* 5. Modales d'information et flux social */}
       <LegalSheet
         isOpen={isLegalSheetOpen}
         onClose={() => setIsLegalSheetOpen(false)}
@@ -176,6 +184,11 @@ export default function HomePage() {
       <LegalNotice
         isOpen={isLegalNoticeOpen}
         onClose={() => setIsLegalNoticeOpen(false)}
+      />
+
+      <SocialFeedModal
+        isOpen={isSocialFeedOpen}
+        onClose={() => setIsSocialFeedOpen(false)}
       />
     </main>
   );

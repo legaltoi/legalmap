@@ -11,6 +11,7 @@ import {
   PlayCircle,
   HelpCircle,
   Layers,
+  Radio,
 } from "lucide-react";
 import { CortegeMovementStatus } from "@/types";
 import { RealtimeStatus } from "@/hooks/useRealtime";
@@ -22,6 +23,7 @@ interface HeaderBarProps {
   onOpenLegalSheet: () => void;
   onOpenLegalNotice: () => void;
   onRecenterCity: () => void;
+  onOpenSocialFeed?: () => void;
 }
 
 export function HeaderBar({
@@ -31,6 +33,7 @@ export function HeaderBar({
   onOpenLegalSheet,
   onOpenLegalNotice,
   onRecenterCity,
+  onOpenSocialFeed,
 }: HeaderBarProps) {
   const getStatusBadge = () => {
     switch (realtimeStatus) {
@@ -128,6 +131,22 @@ export function HeaderBar({
         {/* Right: Status & Action Toggles */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {getStatusBadge()}
+
+          {/* Bouton Flux Live X / #ManifNantes */}
+          {onOpenSocialFeed && (
+            <button
+              onClick={onOpenSocialFeed}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold transition-all touch-manipulation min-h-[36px]"
+              title="Flux Live X/Twitter #ManifNantes"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              </span>
+              <span className="hidden xs:inline">Flux Live</span>
+              <span className="xs:hidden">Live</span>
+            </button>
+          )}
 
           {/* Droits & Fiches Réflexes Button */}
           <button
