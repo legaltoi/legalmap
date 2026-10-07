@@ -109,8 +109,20 @@ export function useConsensus({
           ttlDurationMs: currentTtl,
         });
       } else {
-        // En dessous du seuil : reste invisible du public
+        // En attente de corroboration (1 signalement) : affiché en mode préventif indicatif
         pendingReportsTotal += reportCount;
+        validPublicList.push({
+          id: cluster.id,
+          category: cluster.category,
+          lat: cluster.centroid.lat,
+          lng: cluster.centroid.lng,
+          reportCount,
+          firstReportTime: cluster.firstReportTime,
+          lastReportTime: cluster.lastReportTime,
+          expiresAt: cluster.lastReportTime + CONSENSUS_CONFIG.SLIDING_WINDOW_MS,
+          ttlDurationMs: CONSENSUS_CONFIG.SLIDING_WINDOW_MS,
+          isPending: true,
+        });
       }
     }
 

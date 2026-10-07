@@ -50,6 +50,17 @@ export interface ConsensusMarker {
   lastReportTime: number;
   expiresAt: number; // Timestamp d'expiration automatique (TTL)
   ttlDurationMs: number; // Durée totale du TTL (ex: 300_000ms ou 600_000ms)
+  isPending?: boolean; // Marqueur en attente de corroboration (1 signalement)
+}
+
+/**
+ * Point d'étape sur l'itinéraire (waypoint)
+ */
+export interface RouteWaypoint {
+  id: string;
+  lat: number;
+  lng: number;
+  name?: string;
 }
 
 /**
@@ -67,6 +78,7 @@ export interface CortegeState {
   status: CortegeMovementStatus;
   head: CortegePoint | null;
   tail: CortegePoint | null;
+  routeCoordinates?: [number, number][]; // Tracé bleu dynamique calqué sur les routes [lng, lat][]
   updatedAt: number;
 }
 
@@ -78,6 +90,7 @@ export interface SignedCortegePayload {
     status: CortegeMovementStatus;
     head: { lat: number; lng: number } | null;
     tail: { lat: number; lng: number } | null;
+    routeCoordinates?: [number, number][]; // Tracé bleu dynamique [lng, lat][]
     timestamp: number;
     nonce: string;
   };

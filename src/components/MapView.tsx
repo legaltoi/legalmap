@@ -228,6 +228,21 @@ export function MapView({
       }
     });
 
+    // Fournit une image transparente de secours pour tout motif manquant (ex: "wood-pattern" dans OpenFreeMap)
+    map.on("styleimagemissing", (e) => {
+      try {
+        if (!map.hasImage(e.id)) {
+          map.addImage(e.id, {
+            width: 1,
+            height: 1,
+            data: new Uint8Array([0, 0, 0, 0]),
+          });
+        }
+      } catch {
+        // Ignorer silencieusement si déjà inséré
+      }
+    });
+
     const triggerResize = () => {
       if (map) {
         map.resize();
@@ -403,7 +418,10 @@ export function MapView({
     consensusMarkers.forEach((markerData) => {
       const meta = REPORT_CATEGORIES[markerData.category];
       const remainingMs = Math.max(0, markerData.expiresAt - Date.now());
-      const remainingText = formatTimeRemaining(remainingMs);
+      const remainingText = markerData.isPending
+        ? "1/2 en cours"
+        : formatTimeRemaining(remainingMs);
+      const isPending = Boolean(markerData.isPending);
 
       if (currentMarkers.has(markerData.id)) {
         // Mise à jour de la position et de l'affichage du temps restant
@@ -413,17 +431,20 @@ export function MapView({
         const el = marker.getElement();
         const badgeEl = el.querySelector(".marker-badge");
         const timeEl = el.querySelector(".marker-time");
-        if (badgeEl) badgeEl.textContent = `x${markerData.reportCount}`;
+        if (badgeEl) badgeEl.textContent = isPending ? "1/2 ⏳" : `x${markerData.reportCount}`;
         if (timeEl) timeEl.textContent = remainingText;
       } else {
         // Création d'un nouveau marqueur animé
         const el = document.createElement("div");
         el.className = "consensus-marker cursor-pointer";
+        const pingAnimation = isPending ? "animate-pulse opacity-30" : "animate-ping opacity-40";
+        const borderClass = isPending ? "border-dashed opacity-85" : "border-solid";
+
         el.innerHTML = `
           <div class="relative flex flex-col items-center group">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-2xl relative" style="background-color: ${meta.badgeBg}; border-color: ${meta.borderColor}; box-shadow: 0 0 16px ${meta.color}66;">
-              <div class="w-12 h-12 rounded-full absolute -inset-1 animate-ping opacity-40" style="background-color: ${meta.color};"></div>
-              <span class="text-xs font-black text-white relative z-10 marker-badge">x${markerData.reportCount}</span>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 ${borderClass} shadow-2xl relative" style="background-color: ${meta.badgeBg}; border-color: ${meta.borderColor}; box-shadow: 0 0 16px ${meta.color}66;">
+              <div class="w-12 h-12 rounded-full absolute -inset-1 ${pingAnimation}" style="background-color: ${meta.color};"></div>
+              <span class="text-xs font-black text-white relative z-10 marker-badge">${isPending ? "1/2 ⏳" : `x${markerData.reportCount}`}</span>
             </div>
             <div class="mt-1 px-1.5 py-0.5 rounded-md bg-black/90 border border-zinc-700 text-[9px] font-mono font-bold text-zinc-200 tracking-tight shadow marker-time">
               ${remainingText}
@@ -445,12 +466,12 @@ export function MapView({
     });
   }, [consensusMarkers, mapLoaded]);
 
-  // Synchronisation des positions de la Tête et Fin de Cortège
+  // Synchronisation des positions de la Tête, Fin et du Tracé Bleu du Cortège
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     const map = mapRef.current;
 
-    // Tête de cortège
+    // 1. Tête de cortège
     if (cortegeState.head) {
       if (!cortegeHeadMarkerRef.current) {
         const el = document.createElement("div");
@@ -471,7 +492,7 @@ export function MapView({
       cortegeHeadMarkerRef.current = null;
     }
 
-    // Fin de cortège
+    // 2. Fin de cortège
     if (cortegeState.tail) {
       if (!cortegeTailMarkerRef.current) {
         const el = document.createElement("div");
@@ -490,6 +511,30 @@ export function MapView({
     } else if (cortegeTailMarkerRef.current) {
       cortegeTailMarkerRef.current.remove();
       cortegeTailMarkerRef.current = null;
+    }
+
+    // 3. Mise à jour dynamique du tracé bleu calqué sur les routes
+    const routeSource = map.getSource("official-route-source") as maplibregl.GeoJSONSource | undefined;
+    if (routeSource) {
+      if (cortegeState.routeCoordinates && cortegeState.routeCoordinates.length >= 2) {
+        routeSource.setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              properties: {
+                name: "Parcours Officiel Actualisé",
+                description: "Itinéraire dynamique recalculé sur la voirie",
+                type: "route",
+              },
+              geometry: {
+                type: "LineString",
+                coordinates: cortegeState.routeCoordinates,
+              },
+            },
+          ],
+        });
+      }
     }
   }, [cortegeState, mapLoaded]);
 

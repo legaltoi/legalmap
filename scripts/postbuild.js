@@ -29,3 +29,4 @@ if (fs.existsSync(outDir)) {
 } else {
   console.warn('[postbuild] out directory not found.');
 }
+

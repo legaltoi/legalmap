@@ -5,7 +5,8 @@ import maplibregl from "maplibre-gl";
 import * as pmtiles from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRealtime } from "@/hooks/useRealtime";
-import { CortegeMovementStatus } from "@/types";
+import { CortegeMovementStatus, RouteWaypoint } from "@/types";
+import { fetchWalkingRoute } from "@/lib/routing";
 import {
   signCortegeState,
   derivePublicKey,
@@ -43,6 +44,10 @@ import {
   MapPin,
   Trash2,
   Key,
+  Route,
+  Plus,
+  RotateCcw,
+  Navigation,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -60,8 +65,13 @@ export default function AdminPage() {
   const [headCoords, setHeadCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [tailCoords, setTailCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Mode de placement sur carte ('head' | 'tail' | null)
-  const [placementMode, setPlacementMode] = useState<"head" | "tail" | null>(null);
+  // Points d'étape et tracé dynamique le long des rues
+  const [waypoints, setWaypoints] = useState<RouteWaypoint[]>([]);
+  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+
+  // Mode de placement sur carte ('head' | 'tail' | 'waypoint' | null)
+  const [placementMode, setPlacementMode] = useState<"head" | "tail" | "waypoint" | null>(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [lastBroadcastTime, setLastBroadcastTime] = useState<number | null>(null);
   const [lastBroadcastSig, setLastBroadcastSig] = useState<string | null>(null);
@@ -70,12 +80,34 @@ export default function AdminPage() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const headMarkerRef = useRef<maplibregl.Marker | null>(null);
   const tailMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const waypointMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
 
   const { status: realtimeStatus, sendSignedCortegeState } = useRealtime({
     onCortegeStateReceived: (state) => {
       setCortegeStatus(state.status);
       if (state.head) setHeadCoords({ lat: state.head.lat, lng: state.head.lng });
       if (state.tail) setTailCoords({ lat: state.tail.lat, lng: state.tail.lng });
+      if (state.routeCoordinates && state.routeCoordinates.length >= 2) {
+        setRouteCoordinates(state.routeCoordinates);
+        if (mapRef.current) {
+          const source = mapRef.current.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
+          if (source) {
+            source.setData({
+              type: "FeatureCollection",
+              features: [
+                {
+                  type: "Feature",
+                  properties: { name: "Parcours Actualisé", type: "route" },
+                  geometry: {
+                    type: "LineString",
+                    coordinates: state.routeCoordinates,
+                  },
+                },
+              ],
+            });
+          }
+        }
+      }
     },
   });
 
@@ -127,7 +159,7 @@ export default function AdminPage() {
     }
   };
 
-  const placementModeRef = useRef<"head" | "tail" | null>(null);
+  const placementModeRef = useRef<"head" | "tail" | "waypoint" | null>(null);
   placementModeRef.current = placementMode;
 
   // Initialisation de la carte d'administration
@@ -267,6 +299,20 @@ export default function AdminPage() {
       }
     });
 
+    map.on("styleimagemissing", (e) => {
+      try {
+        if (!map.hasImage(e.id)) {
+          map.addImage(e.id, {
+            width: 1,
+            height: 1,
+            data: new Uint8Array([0, 0, 0, 0]),
+          });
+        }
+      } catch {
+        // Ignorer
+      }
+    });
+
     const triggerResize = () => {
       if (map) {
         map.resize();
@@ -311,6 +357,14 @@ export default function AdminPage() {
       } else if (currentMode === "tail") {
         setTailCoords({ lat, lng });
         setPlacementMode(null);
+      } else if (currentMode === "waypoint") {
+        const newWp: RouteWaypoint = {
+          id: `wp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          lat,
+          lng,
+        };
+        setWaypoints((prev) => [...prev, newWp]);
+        setPlacementMode(null);
       }
     });
 
@@ -331,7 +385,7 @@ export default function AdminPage() {
     };
   }, [isAuthenticated]);
 
-  // Synchronisation des marqueurs sur la carte d'administration
+  // Synchronisation des marqueurs sur la carte d'administration (Tête et Fin)
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -387,7 +441,109 @@ export default function AdminPage() {
     }
   }, [headCoords, tailCoords]);
 
-  // Signature asymétrique Ed25519 et diffusion officielle
+  // Synchronisation des marqueurs d'étapes (waypoints)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const currentMarkers = waypointMarkersRef.current;
+    const activeIds = new Set(waypoints.map((w) => w.id));
+
+    // Supprimer les marqueurs retirés
+    for (const [id, marker] of currentMarkers.entries()) {
+      if (!activeIds.has(id)) {
+        marker.remove();
+        currentMarkers.delete(id);
+      }
+    }
+
+    // Ajouter ou mettre à jour les marqueurs
+    waypoints.forEach((wp, index) => {
+      if (currentMarkers.has(wp.id)) {
+        currentMarkers.get(wp.id)!.setLngLat([wp.lng, wp.lat]);
+      } else {
+        const el = document.createElement("div");
+        el.className = "p-1 bg-purple-600 rounded-full border-2 border-white text-[11px] font-bold text-white shadow-lg cursor-pointer flex items-center gap-0.5 px-2";
+        el.innerHTML = `<span>📍</span><span>${index + 1}</span>`;
+
+        const marker = new maplibregl.Marker({ element: el, draggable: true })
+          .setLngLat([wp.lng, wp.lat])
+          .addTo(map);
+
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat();
+          setWaypoints((prev) =>
+            prev.map((item) =>
+              item.id === wp.id
+                ? {
+                    ...item,
+                    lat: Math.round(lngLat.lat * 1000) / 1000,
+                    lng: Math.round(lngLat.lng * 1000) / 1000,
+                  }
+                : item
+            )
+          );
+        });
+
+        currentMarkers.set(wp.id, marker);
+      }
+    });
+  }, [waypoints]);
+
+  // Calcul automatique de l'itinéraire le long des rues de Nantes (OSRM foot)
+  const handleRecalculateRoute = async () => {
+    setIsCalculatingRoute(true);
+
+    const orderedPoints: [number, number][] = [];
+    if (headCoords) orderedPoints.push([headCoords.lng, headCoords.lat]);
+    waypoints.forEach((wp) => orderedPoints.push([wp.lng, wp.lat]));
+    if (tailCoords) orderedPoints.push([tailCoords.lng, tailCoords.lat]);
+
+    if (orderedPoints.length >= 2) {
+      try {
+        const calculatedCoords = await fetchWalkingRoute(orderedPoints);
+        setRouteCoordinates(calculatedCoords);
+
+        // Mise à jour visuelle sur la carte d'administration
+        if (mapRef.current) {
+          const source = mapRef.current.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
+          if (source) {
+            source.setData({
+              type: "FeatureCollection",
+              features: [
+                {
+                  type: "Feature",
+                  properties: { name: "Parcours Actualisé", type: "route" },
+                  geometry: {
+                    type: "LineString",
+                    coordinates: calculatedCoords,
+                  },
+                },
+              ],
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Erreur calcul d'itinéraire voirie:", err);
+      }
+    } else {
+      alert("Placez au moins 2 points (Tête, Fin ou Étapes) pour calculer le tracé calqué sur les rues.");
+    }
+    setIsCalculatingRoute(false);
+  };
+
+  // Réinitialisation au tracé initial
+  const handleResetRoute = () => {
+    setRouteCoordinates([]);
+    setWaypoints([]);
+    if (mapRef.current) {
+      const source = mapRef.current.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
+      if (source) {
+        source.setData(nantesData.officialRoute as any);
+      }
+    }
+  };
+
+  // Signature asymétrique Ed25519 et diffusion officielle (Statut + Tête + Fin + Tracé)
   const handleBroadcastSignedState = async () => {
     if (!privateKey) {
       alert("Clé privée non disponible pour la signature.");
@@ -401,6 +557,7 @@ export default function AdminPage() {
       status: cortegeStatus,
       head: headCoords ? { lat: headCoords.lat, lng: headCoords.lng } : null,
       tail: tailCoords ? { lat: tailCoords.lat, lng: tailCoords.lng } : null,
+      routeCoordinates: routeCoordinates.length >= 2 ? routeCoordinates : undefined,
       timestamp: now,
       nonce: `nonce_${now}_${Math.random().toString(36).substring(2, 10)}`,
     };
@@ -629,6 +786,84 @@ export default function AdminPage() {
             </button>
           </div>
 
+          {/* 4. Tracé & Étapes du Cortège (Voirie Dynamique) */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Route className="w-3.5 h-3.5" /> 4. Tracé &amp; Étapes ({waypoints.length})
+              </span>
+              {waypoints.length > 0 && (
+                <button
+                  onClick={() => setWaypoints([])}
+                  className="text-zinc-500 hover:text-red-400 p-1 text-[11px]"
+                  title="Effacer toutes les étapes"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <p className="text-[11px] text-zinc-400 leading-snug">
+              Placez des étapes sur les carrefours pour contraindre le tracé piéton à suivre fidèlement les rues.
+            </p>
+
+            <button
+              onClick={() => setPlacementMode("waypoint")}
+              className={`w-full py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
+                placementMode === "waypoint"
+                  ? "bg-purple-600 text-white border-purple-400 animate-pulse"
+                  : "bg-zinc-800 hover:bg-zinc-700 text-purple-300 border-zinc-700"
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {placementMode === "waypoint"
+                ? "Cliquez sur la carte pour ajouter une étape"
+                : "+ Ajouter un point d'étape"}
+            </button>
+
+            {/* Liste des points d'étape */}
+            {waypoints.length > 0 && (
+              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                {waypoints.map((wp, index) => (
+                  <div
+                    key={wp.id}
+                    className="flex items-center justify-between p-2 bg-black/50 border border-zinc-800 rounded-lg text-xs"
+                  >
+                    <span className="font-mono text-purple-300 flex items-center gap-1">
+                      <span>📍</span> #{index + 1} ({wp.lat.toFixed(3)}, {wp.lng.toFixed(3)})
+                    </span>
+                    <button
+                      onClick={() => setWaypoints((prev) => prev.filter((item) => item.id !== wp.id))}
+                      className="text-zinc-500 hover:text-red-400 p-0.5"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Bouton de calcul automatique OSRM */}
+            <div className="pt-1 flex flex-col gap-2">
+              <button
+                onClick={handleRecalculateRoute}
+                disabled={isCalculatingRoute}
+                className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white text-xs font-extrabold rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+              >
+                <Navigation className={`w-3.5 h-3.5 ${isCalculatingRoute ? "animate-spin" : ""}`} />
+                {isCalculatingRoute ? "Calcul le long des rues..." : "Recalculer le tracé sur la voirie"}
+              </button>
+
+              <button
+                onClick={handleResetRoute}
+                className="w-full py-1.5 px-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Rétablir le tracé déclaré initial
+              </button>
+            </div>
+          </div>
+
           {/* Info signature */}
           {lastBroadcastTime && (
             <div className="p-3 bg-emerald-950/30 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 space-y-1 font-mono">
@@ -648,7 +883,9 @@ export default function AdminPage() {
           <div ref={mapContainerRef} className="w-full h-full" />
           {placementMode && (
             <div className="absolute top-4 left-4 right-4 z-20 bg-blue-600 text-white p-2.5 rounded-xl text-center text-xs font-bold shadow-2xl animate-pulse">
-              Touchez un point sur la carte pour placer la {placementMode === "head" ? "Tête" : "Fin"} de cortège
+              {placementMode === "head" && "Touchez un point sur la carte pour placer la Tête de cortège"}
+              {placementMode === "tail" && "Touchez un point sur la carte pour placer la Fin de cortège"}
+              {placementMode === "waypoint" && "Touchez un point sur la carte pour ajouter un Point d'étape"}
             </div>
           )}
         </div>

@@ -63,6 +63,7 @@ export const SignedCortegeSchema = z
         status: z.enum(["MOBILE", "IMMOBILE"]),
         head: CoordinateSchema.nullable(),
         tail: CoordinateSchema.nullable(),
+        routeCoordinates: z.array(z.tuple([z.number(), z.number()])).optional(),
         timestamp: z.number().int().positive(),
         nonce: z.string().min(8).max(64),
       })

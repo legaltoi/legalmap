@@ -132,4 +132,18 @@ assert(validateInboundReport(maliciousReport) === null, "Rejet strict Zod (.stri
 // 4. État du cortège validé via validateInboundCortege
 assert(validateInboundCortege(signedPayload) !== null, "Validation sanitization réussie pour l'état officiel signé du cortège");
 
+// 5. État du cortège avec tracé dynamique (routeCoordinates) signé et validé
+const signedRoutePayload = signCortegeState(
+  {
+    ...validMessageData,
+    routeCoordinates: [
+      [-1.5583, 47.2132],
+      [-1.5562, 47.2144],
+      [-1.5537, 47.2155],
+    ],
+  },
+  testPrivKey
+);
+assert(validateInboundCortege(signedRoutePayload) !== null, "Validation sanitization et signature Ed25519 pour le tracé dynamique");
+
 console.log(`\n🎉 TOUS LES TESTS DE CYBERSÉCURITÉ ET MOTEUR SONT VALIDÉS (${passedTests}/${totalTests}) !`);

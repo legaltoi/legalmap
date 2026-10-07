@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const isGitHubPages =
+  process.env.GITHUB_PAGES === "true" ||
+  process.env.GITHUB_ACTIONS === "true" ||
+  process.env.NEXT_PUBLIC_BASE_PATH === "/legalmap";
+
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || (isGitHubPages ? "/legalmap" : "");
+
 export const metadata: Metadata = {
   title: "LEGALMAPS | Nantes - Information & Sécurité Citoyenne",
   description:
     "Application citoyenne d'orientation, sécurité et réduction des risques pour manifestations et mouvements sociaux à Nantes.",
-  manifest: "/manifest.json",
+  manifest: `${basePath}/manifest.json`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -13,12 +20,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/icon.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: `${basePath}/icons/icon.svg`, type: "image/svg+xml" },
+      { url: `${basePath}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${basePath}/icons/icon-512.png`, sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: `${basePath}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
     ],
   },
 };

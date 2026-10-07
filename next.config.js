@@ -15,7 +15,7 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: blob: https://*.openfreemap.org https://demotiles.maplibre.org;
   font-src 'self' data: https://*.openfreemap.org https://demotiles.maplibre.org;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.openfreemap.org https://demotiles.maplibre.org;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.openfreemap.org https://demotiles.maplibre.org https://router.project-osrm.org;
   frame-ancestors 'none';
   base-uri 'self';
   form-action 'self';
@@ -75,3 +75,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+

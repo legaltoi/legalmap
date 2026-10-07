@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import { getSupabaseClient, CHANNELS, isSupabaseConfigured } from "@/lib/supabase";
 import { ReportEvent, CortegeState, ReportCategory, SignedCortegePayload } from "@/types";
 import { roundCoordinates } from "@/lib/geo";
@@ -30,6 +31,10 @@ export function useRealtime({
 
   // Mémorisation des derniers envois pour le cooldown local anti-rebond (60s par catégorie)
   const categoryCooldownsRef = useRef<Map<ReportCategory, number>>(new Map());
+
+  // Références directes persistantes vers les canaux WebSocket actifs
+  const reportsChannelRef = useRef<RealtimeChannel | null>(null);
+  const cortegeChannelRef = useRef<RealtimeChannel | null>(null);
 
   // Sauvegarde des callbacks dans des refs stables
   const onReportRef = useRef(onReportReceived);
@@ -70,6 +75,7 @@ export function useRealtime({
                 tail: validCortege.data.tail
                   ? { ...validCortege.data.tail, updatedAt: validCortege.data.timestamp }
                   : null,
+                routeCoordinates: validCortege.data.routeCoordinates,
                 updatedAt: validCortege.data.timestamp,
               });
             }
@@ -99,25 +105,30 @@ export function useRealtime({
     const reportsChannel = supabase.channel(CHANNELS.REPORTS, {
       config: {
         broadcast: {
-          self: true,
-          ack: false,
+          self: false,
+          ack: true,
         },
       },
     });
+
+    reportsChannelRef.current = reportsChannel;
 
     reportsChannel
       .on("broadcast", { event: "new-report" }, (payload) => {
         // Validation stricte Zod + Bounding Box + PoW
         const validReport = validateInboundReport(payload.payload);
         if (validReport) {
+          console.info("[Realtime] Signalement reçu via WebSocket :", validReport.category, validReport.id);
           onReportRef.current?.(validReport);
         }
       })
       .subscribe((subStatus) => {
         if (subStatus === "SUBSCRIBED") {
+          console.info("[Realtime] Canal reports-stream connecté.");
           setStatus("connected");
           setLastPingTime(Date.now());
         } else if (subStatus === "CLOSED" || subStatus === "CHANNEL_ERROR") {
+          console.warn("[Realtime] Déconnexion canal reports-stream :", subStatus);
           setStatus("offline");
         }
       });
@@ -126,17 +137,20 @@ export function useRealtime({
     const cortegeChannel = supabase.channel(CHANNELS.CORTEGE, {
       config: {
         broadcast: {
-          self: true,
-          ack: false,
+          self: false,
+          ack: true,
         },
       },
     });
+
+    cortegeChannelRef.current = cortegeChannel;
 
     cortegeChannel
       .on("broadcast", { event: "cortege-state-update" }, (payload) => {
         // Validation stricte Ed25519 + Anti-rejeu
         const validCortege = validateInboundCortege(payload.payload);
         if (validCortege) {
+          console.info("[Realtime] État cortège reçu et validé :", validCortege.data.status);
           onCortegeRef.current?.({
             status: validCortege.data.status,
             head: validCortege.data.head
@@ -145,15 +159,22 @@ export function useRealtime({
             tail: validCortege.data.tail
               ? { ...validCortege.data.tail, updatedAt: validCortege.data.timestamp }
               : null,
+            routeCoordinates: validCortege.data.routeCoordinates,
             updatedAt: validCortege.data.timestamp,
           });
         }
       })
-      .subscribe();
+      .subscribe((subStatus) => {
+        if (subStatus === "SUBSCRIBED") {
+          console.info("[Realtime] Canal cortege-state connecté.");
+        }
+      });
 
     return () => {
       reportsChannel.unsubscribe();
       cortegeChannel.unsubscribe();
+      reportsChannelRef.current = null;
+      cortegeChannelRef.current = null;
     };
   }, []);
 
@@ -233,15 +254,16 @@ export function useRealtime({
       const supabase = getSupabaseClient();
       if (supabase) {
         try {
-          const channel = supabase.channel(CHANNELS.REPORTS);
-          await channel.send({
+          const channel = reportsChannelRef.current || supabase.channel(CHANNELS.REPORTS);
+          const sendResult = await channel.send({
             type: "broadcast",
             event: "new-report",
             payload: report,
           });
+          console.info("[Realtime] Diffusion signalement effectuée :", report.category, sendResult);
           return true;
         } catch (err) {
-          console.warn("[Supabase] Échec broadcast report:", err);
+          console.warn("[Realtime] Échec broadcast report:", err);
           return false;
         }
       }
@@ -275,6 +297,7 @@ export function useRealtime({
         tail: signedPayload.data.tail
           ? { ...signedPayload.data.tail, updatedAt: signedPayload.data.timestamp }
           : null,
+        routeCoordinates: signedPayload.data.routeCoordinates,
         updatedAt: signedPayload.data.timestamp,
       });
 
@@ -282,15 +305,16 @@ export function useRealtime({
       const supabase = getSupabaseClient();
       if (supabase) {
         try {
-          const channel = supabase.channel(CHANNELS.CORTEGE);
-          await channel.send({
+          const channel = cortegeChannelRef.current || supabase.channel(CHANNELS.CORTEGE);
+          const sendResult = await channel.send({
             type: "broadcast",
             event: "cortege-state-update",
             payload: signedPayload,
           });
+          console.info("[Realtime] Diffusion état cortège effectuée :", signedPayload.data.status, sendResult);
           return true;
         } catch (err) {
-          console.warn("[Supabase] Échec envoi broadcast cortege:", err);
+          console.warn("[Realtime] Échec envoi broadcast cortege:", err);
           return false;
         }
       }

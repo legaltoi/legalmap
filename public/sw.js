@@ -4,7 +4,7 @@
  * ZÉRO télémétrie, ZÉRO tracking.
  */
 
-const CACHE_NAME = "legalmaps-v1.0.1";
+const CACHE_NAME = "legalmaps-v1.0.2";
 
 const PRECACHE_URLS = [
   "./",

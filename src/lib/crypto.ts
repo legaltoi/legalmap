@@ -20,6 +20,7 @@ export interface CortegeMessageData {
   status: CortegeMovementStatus;
   head: { lat: number; lng: number } | null;
   tail: { lat: number; lng: number } | null;
+  routeCoordinates?: [number, number][]; // Tracé bleu le long des rues [lng, lat][]
   timestamp: number; // Date.now() en millisecondes
   nonce: string; // Entropie anti-rejeu
 }
@@ -36,6 +37,10 @@ export function canonicalizeMessage(data: CortegeMessageData): Uint8Array {
   const canonicalObject = {
     head: data.head ? { lat: Number(data.head.lat.toFixed(3)), lng: Number(data.head.lng.toFixed(3)) } : null,
     nonce: data.nonce,
+    routeCoordinates:
+      data.routeCoordinates && Array.isArray(data.routeCoordinates) && data.routeCoordinates.length > 0
+        ? data.routeCoordinates.map(([lng, lat]) => [Number(lng.toFixed(5)), Number(lat.toFixed(5))])
+        : null,
     status: data.status,
     tail: data.tail ? { lat: Number(data.tail.lat.toFixed(3)), lng: Number(data.tail.lng.toFixed(3)) } : null,
     timestamp: data.timestamp,
