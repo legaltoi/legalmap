@@ -7,8 +7,12 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
  * Uniquement des canaux WebSocket Broadcast en mémoire vive.
  */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const defaultSupabaseUrl = "https://elpnscywkpsljrxkluij.supabase.co";
+const defaultSupabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscG5zY3l3a3BzbGpyeGtsdWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNjM3NzQsImV4cCI6MjEwNjkzOTc3NH0.MCuxluF1d1XflF3KtkvGJBRBI6Xw1ASILuJCTqB0EHU";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || defaultSupabaseUrl;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || defaultSupabaseAnonKey;
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
@@ -46,4 +50,3 @@ export function getSupabaseClient(): SupabaseClient | null {
 
   return supabaseInstance;
 }
-

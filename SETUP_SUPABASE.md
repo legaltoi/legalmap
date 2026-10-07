@@ -17,7 +17,7 @@ Ce guide détaille pas-à-pas la configuration du relais temps réel pour **LEGA
 2. Cliquez sur le bouton vert **New Project**.
 3. Renseignez les informations de base :
    - **Name** : `legalmaps-nantes` (ou le nom de votre ville)
-   - **Database Password** : Générez un mot de passe fort (note : vous n'aurez jamais besoin de vous connecter à la base SQL).
+   - **Database Password** : Générez un mot de passe fort (note : vous n'aurez jamais besoin de vous connecter à la base SQL). -> fhdsuohgpriueqhòofhre3489999
    - **Region** : Choisissez une région européenne proche pour minimiser la latence (ex: `EU (Frankfurt)`, `EU (Ireland)` ou `EU (London)`).
    - **Pricing Plan** : `Free Tier` ($0/mois).
 4. Cliquez sur **Create new project** et patientez environ 1 à 2 minutes pendant l'initialisation de l'infrastructure.
@@ -29,8 +29,8 @@ Ce guide détaille pas-à-pas la configuration du relais temps réel pour **LEGA
 1. Dans le tableau de bord de votre projet Supabase, cliquez sur l'icône **Project Settings** (l'engrenage en bas à gauche de la barre latérale).
 2. Cliquez sur le menu **API**.
 3. Dans la section **Project API keys** et **Project URL**, repérez les deux valeurs publiques :
-   - **Project URL** : une URL ressemblant à `https://abcdefghijklm.supabase.co`
-   - **Project API Keys** -> `anon` / `public` : une clé JWT publique débutant par `eyJhbGciOi...`
+   - **Project URL** : une URL ressemblant à `https://elpnscywkpsljrxkluij.supabase.co
+   - **Project API Keys** -> `anon` / `public` : une clé JWT publique débutant par `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscG5zY3l3a3BzbGpyeGtsdWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNjM3NzQsImV4cCI6MjEwNjkzOTc3NH0.MCuxluF1d1XflF3KtkvGJBRBI6Xw1ASILuJCTqB0EHU'
 
 > [!NOTE]
 > La clé `anon` (publique) est conçue par Supabase pour être exposée côté client dans les navigateurs. Ne renseignez **jamais** la clé `service_role` (secrète).
