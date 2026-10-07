@@ -79,7 +79,7 @@ export function MapView({
       },
       "nantes-pmtiles-source": {
         type: "vector",
-        url: "pmtiles:///tiles/nantes.pmtiles",
+        url: `pmtiles://${typeof window !== "undefined" && window.location.pathname.startsWith("/legalmap") ? "/legalmap" : ""}/tiles/nantes.pmtiles`,
       },
     },
     layers: [

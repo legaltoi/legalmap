@@ -50,7 +50,8 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                  var base = window.location.pathname.startsWith('/legalmap') ? '/legalmap' : '';
+                  navigator.serviceWorker.register(base + '/sw.js').then(function(reg) {
                     console.log('[LEGALMAPS] ServiceWorker actif:', reg.scope);
                   }).catch(function(err) {
                     console.warn('[LEGALMAPS] Erreur ServiceWorker:', err);

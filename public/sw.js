@@ -7,12 +7,12 @@
 const CACHE_NAME = "legalmaps-v1.0.0";
 
 const PRECACHE_URLS = [
-  "/",
-  "/manifest.json",
-  "/icons/icon.svg",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/tiles/nantes.pmtiles",
+  "./",
+  "./manifest.json",
+  "./icons/icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./tiles/nantes.pmtiles",
 ];
 
 // Installation : pré-mise en cache des ressources critiques

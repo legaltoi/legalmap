@@ -38,7 +38,8 @@ export async function solveProofOfWork(
   if (typeof window !== "undefined" && window.Worker) {
     try {
       return await new Promise((resolve, reject) => {
-        const worker = new Worker("/pow-worker.js");
+        const base = window.location.pathname.startsWith("/legalmap") ? "/legalmap" : "";
+        const worker = new Worker(`${base}/pow-worker.js`);
         const timeout = setTimeout(() => {
           worker.terminate();
           reject(new Error("PoW Worker Timeout"));
