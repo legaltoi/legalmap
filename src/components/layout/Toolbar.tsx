@@ -32,3 +32,4 @@ export function Toolbar({ onToggleSocialFeed, isSocialFeedOpen = false }: Toolba
     </div>
   );
 }
+

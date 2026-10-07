@@ -20,7 +20,87 @@ import {
   X,
   AlertCircle,
   Navigation,
+  Wind,
 } from "lucide-react";
+import { useWindData } from "@/hooks/useWindData";
+import { WindBadge } from "@/components/weather/WindBadge";
+import { WindData } from "@/services/weatherService";
+
+const WIND_STORAGE_KEY = "legalmaps_show_wind";
+
+/**
+ * Génère les vecteurs de vent (flèches directionnelles orientées selon le souffle réel)
+ * répartis sur les points névralgiques du centre de Nantes.
+ */
+function buildWindGeoJson(windData: WindData) {
+  const theta = (windData.blowToDeg * Math.PI) / 180;
+  const delta = 0.0028; // ~250m de longueur
+  const dx = Math.sin(theta) * delta;
+  const dy = Math.cos(theta) * delta;
+
+  // Ailettes de la tête de flèche
+  const barbLen = delta * 0.38;
+  const thetaLeft = theta - (150 * Math.PI) / 180;
+  const thetaRight = theta + (150 * Math.PI) / 180;
+  const barbDxLeft = Math.sin(thetaLeft) * barbLen;
+  const barbDyLeft = Math.cos(thetaLeft) * barbLen;
+  const barbDxRight = Math.sin(thetaRight) * barbLen;
+  const barbDyRight = Math.cos(thetaRight) * barbLen;
+
+  // Grille des points d'observation sur Nantes
+  const gridPoints: [number, number][] = [
+    [-1.5621, 47.2135], // Graslin
+    [-1.5583, 47.2155], // Royale
+    [-1.5583, 47.2132], // Commerce
+    [-1.553, 47.2155],  // Bouffay
+    [-1.55, 47.2162],   // Château
+    [-1.555, 47.2185],  // 50 Otages / Cirque
+    [-1.5582, 47.2195], // Bretagne
+    [-1.5535, 47.2215], // Préfecture
+    [-1.553, 47.211],   // CHU
+    [-1.542, 47.218],   // Gare Nord
+    [-1.565, 47.218],   // Guist'hau
+    [-1.5485, 47.214],  // Miroir d'Eau
+  ];
+
+  const features = gridPoints.map(([lng, lat], idx) => {
+    const startX = lng - dx / 2;
+    const startY = lat - dy / 2;
+    const endX = lng + dx / 2;
+    const endY = lat + dy / 2;
+
+    const barbLeftX = endX + barbDxLeft;
+    const barbLeftY = endY + barbDyLeft;
+    const barbRightX = endX + barbDxRight;
+    const barbRightY = endY + barbDyRight;
+
+    return {
+      type: "Feature" as const,
+      properties: {
+        id: `wind-vector-${idx}`,
+      },
+      geometry: {
+        type: "MultiLineString" as const,
+        coordinates: [
+          [
+            [startX, startY],
+            [endX, endY],
+          ],
+          [
+            [barbLeftX, barbLeftY],
+            [endX, endY],
+            [barbRightX, barbRightY],
+          ],
+        ],
+      },
+    };
+  });
+
+  return {
+    type: "FeatureCollection" as const,
+    features,
+  };
+}
 
 export const POI_META: Record<
   POICategory,
@@ -116,6 +196,35 @@ export function MapView({
   const [selectedConsensus, setSelectedConsensus] = useState<ConsensusMarker | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Bascule du vent et de sa direction en temps réel (persistance locale)
+  const [isWindEnabled, setIsWindEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(WIND_STORAGE_KEY);
+      if (saved === "true") {
+        setIsWindEnabled(true);
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleWind = useCallback(() => {
+    setIsWindEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(WIND_STORAGE_KEY, String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const {
+    windData,
+    isLoading: isWindLoading,
+    refetch: refetchWind,
+  } = useWindData({ enabled: isWindEnabled });
 
   const cortegeStateRef = useRef(cortegeState);
   cortegeStateRef.current = cortegeState;
@@ -376,7 +485,47 @@ export function MapView({
         });
       }
 
-      // 2. Création des POIs statiques (Eau, Pharmacie, Urgences, Juridique, Toilettes)
+      // 2. Source et calques des vecteurs de flux de vent (temps réel)
+      if (!map.getSource("wind-vectors-source")) {
+        map.addSource("wind-vectors-source", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        map.addLayer({
+          id: "wind-vectors-glow",
+          type: "line",
+          source: "wind-vectors-source",
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": "#06b6d4",
+            "line-width": 5,
+            "line-opacity": 0.35,
+            "line-blur": 3,
+          },
+        });
+
+        map.addLayer({
+          id: "wind-vectors-line",
+          type: "line",
+          source: "wind-vectors-source",
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": "#22d3ee",
+            "line-width": 2,
+            "line-opacity": 0.85,
+            "line-dasharray": [4, 3],
+          },
+        });
+      }
+
+      // 3. Création des POIs statiques (Eau, Pharmacie, Urgences, Juridique, Toilettes)
       if (poiItemsRef.current.size === 0) {
         nantesData.pois.forEach((poi) => {
           const cat = poi.category as POICategory;
@@ -480,6 +629,24 @@ export function MapView({
     }
   }, [userLocation]);
 
+  // Synchronisation dynamique des vecteurs de flux de vent sur la carte MapLibre
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+    const source = map.getSource("wind-vectors-source") as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    if (isWindEnabled && windData) {
+      const geoJson = buildWindGeoJson(windData);
+      source.setData(geoJson as any);
+    } else {
+      source.setData({
+        type: "FeatureCollection",
+        features: [],
+      } as any);
+    }
+  }, [isWindEnabled, windData, mapLoaded]);
+
   // Synchronisation des marqueurs de consensus
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
@@ -503,6 +670,26 @@ export function MapView({
         ? "1/2 en cours"
         : formatTimeRemaining(remainingMs);
       const isPending = Boolean(markerData.isPending);
+      const isGas = markerData.category === "ZONE_GAZ";
+
+      // Cône dynamique de dérive sous le vent pour les alertes de gaz lacrymogène
+      const gasConeHtml =
+        isGas && isWindEnabled && windData
+          ? `<div class="gas-drift-cone absolute pointer-events-none" style="transform: rotate(${windData.blowToDeg}deg); transform-origin: 20px 20px; width: 64px; height: 64px; top: -12px; left: -12px; z-index: -1;">
+              <svg viewBox="0 0 64 64" width="64" height="64" fill="none">
+                <defs>
+                  <linearGradient id="gasGrad-${markerData.id}" x1="0%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.85"/>
+                    <stop offset="60%" stop-color="#f43f5e" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#f43f5e" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M 32 32 L 20 2 A 32 32 0 0 1 44 2 Z" fill="url(#gasGrad-${markerData.id})" />
+                <line x1="32" y1="30" x2="32" y2="6" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 2" />
+                <polyline points="28,10 32,5 36,10" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>`
+          : "";
 
       if (currentMarkers.has(markerData.id)) {
         // Mise à jour de la position et de l'affichage du temps restant
@@ -514,6 +701,17 @@ export function MapView({
         const timeEl = el.querySelector(".marker-time");
         if (badgeEl) badgeEl.textContent = isPending ? "1/2 ⏳" : `x${markerData.reportCount}`;
         if (timeEl) timeEl.textContent = remainingText;
+
+        // Mise à jour du cône de gaz si l'état du vent a changé
+        const existingCone = el.querySelector(".gas-drift-cone");
+        if (existingCone && (!isWindEnabled || !windData)) {
+          existingCone.remove();
+        } else if (!existingCone && isGas && isWindEnabled && windData) {
+          const container = el.querySelector(".relative");
+          if (container) {
+            container.insertAdjacentHTML("afterbegin", gasConeHtml);
+          }
+        }
       } else {
         // Création d'un nouveau marqueur animé
         const el = document.createElement("div");
@@ -523,6 +721,7 @@ export function MapView({
 
         el.innerHTML = `
           <div class="relative flex flex-col items-center group">
+            ${gasConeHtml}
             <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 ${borderClass} shadow-2xl relative" style="background-color: ${meta.badgeBg}; border-color: ${meta.borderColor}; box-shadow: 0 0 16px ${meta.color}66;">
               <div class="w-12 h-12 rounded-full absolute -inset-1 ${pingAnimation}" style="background-color: ${meta.color};"></div>
               <span class="text-xs font-black text-white relative z-10 marker-badge">${isPending ? "1/2 ⏳" : `x${markerData.reportCount}`}</span>
@@ -545,7 +744,7 @@ export function MapView({
         currentMarkers.set(markerData.id, newMarker);
       }
     });
-  }, [consensusMarkers, mapLoaded]);
+  }, [consensusMarkers, mapLoaded, isWindEnabled, windData]);
 
   // Synchronisation des positions de la Tête, Fin et du Tracé Bleu du Cortège
   useEffect(() => {
@@ -672,6 +871,16 @@ export function MapView({
         className={`w-full h-full ${isMapSelectActive ? "cursor-crosshair" : "cursor-grab"}`}
       />
 
+      {/* Badge HUD Vent & Direction en temps réel */}
+      {isWindEnabled && (
+        <WindBadge
+          windData={windData}
+          isLoading={isWindLoading}
+          onRefresh={refetchWind}
+          onClose={handleToggleWind}
+        />
+      )}
+
       {/* Barre de filtres POI minimaliste */}
       <div className="absolute top-16 left-3 right-3 sm:left-4 sm:right-auto z-20 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
         <button
@@ -704,10 +913,43 @@ export function MapView({
             </button>
           );
         })}
+
+        {/* Bascule rapide du vent et de sa direction */}
+        <button
+          onClick={handleToggleWind}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
+            isWindEnabled
+              ? "bg-cyan-950/90 text-cyan-300 border-cyan-400 shadow-md scale-105 ring-1 ring-cyan-500/40"
+              : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
+          }`}
+          title={isWindEnabled ? "Masquer le vent en temps réel" : "Afficher le vent et sa direction (Temps Réel)"}
+        >
+          <span>💨</span>
+          <span>Vent</span>
+          {isWindEnabled && windData && (
+            <span className="text-[9px] font-mono font-bold text-cyan-300">
+              {windData.speedKmh} km/h {windData.cardinalFrom}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Boutons d'action flottants latéraux (Recentrement, GPS) */}
+      {/* Boutons d'action flottants latéraux (Recentrement, GPS, Vent) */}
       <div className="absolute right-3 bottom-28 sm:bottom-24 z-20 flex flex-col gap-2">
+        {/* Bascule Vent & Direction en Temps Réel */}
+        <button
+          onClick={handleToggleWind}
+          className={`p-3 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[48px] min-w-[48px] ${
+            isWindEnabled
+              ? "bg-cyan-500/20 border-cyan-400 text-cyan-300 ring-2 ring-cyan-500/40 shadow-cyan-900/40"
+              : "bg-black/90 hover:bg-zinc-900 border-zinc-700/80 text-zinc-400 hover:text-white"
+          }`}
+          title={isWindEnabled ? "Masquer le vent en direct" : "Afficher le vent et sa direction (Temps Réel)"}
+          aria-label="Bascule vent et direction"
+        >
+          <Wind className={`w-5 h-5 ${isWindEnabled ? "animate-pulse" : ""}`} />
+        </button>
+
         {/* Recentrer sur ma position GPS */}
         <button
           onClick={handleLocateMe}
