@@ -61,6 +61,9 @@ export function MapView({
   const [isLocating, setIsLocating] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
+  const cartoApiKey = process.env.NEXT_PUBLIC_CARTO_API_KEY || "cb1_3imj_1_138a3238d2c2b9954ef65901";
+  const cartoQuery = cartoApiKey ? `?api_key=${cartoApiKey}` : "";
+
   // Style de carte sombre haute lisibilité (OLED optimisé)
   const darkMapStyle: maplibregl.StyleSpecification = {
     version: 8,
@@ -69,9 +72,9 @@ export function MapView({
       "osm-dark": {
         type: "raster",
         tiles: [
-          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+          `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png${cartoQuery}`,
+          `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png${cartoQuery}`,
+          `https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png${cartoQuery}`,
         ],
         tileSize: 256,
         attribution:

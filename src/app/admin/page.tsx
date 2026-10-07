@@ -121,8 +121,8 @@ export default function AdminPage() {
           "osm-dark": {
             type: "raster",
             tiles: [
-              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+              `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY || "cb1_3imj_1_138a3238d2c2b9954ef65901"}`,
+              `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY || "cb1_3imj_1_138a3238d2c2b9954ef65901"}`,
             ],
             tileSize: 256,
           },

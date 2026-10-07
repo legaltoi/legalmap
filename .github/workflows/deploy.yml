@@ -39,6 +39,7 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_ADMIN_VERIFY_KEY: "909b69715acf5dbc959e1e23c00bdf8868d694214b8cf5d5751f28a8867dce4c"
+          NEXT_PUBLIC_CARTO_API_KEY: "cb1_3imj_1_138a3238d2c2b9954ef65901"
         run: npm run build
 
       - name: Upload artifact
@@ -56,3 +57,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
