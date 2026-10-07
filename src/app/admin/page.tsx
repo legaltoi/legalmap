@@ -1113,7 +1113,7 @@ export default function AdminPage() {
                 className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white text-xs font-extrabold rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
               >
                 <Navigation className={`w-3.5 h-3.5 ${isCalculatingRoute ? "animate-spin" : ""}`} />
-                {isCalculatingRoute ? "Calcul le long des rues..." : "Recalculer le tracé sur la voirie"}
+                {isCalculatingRoute ? "Calcul piéton en cours..." : "Recalculer le tracé (Mode Piéton / Rues & Places)"}
               </button>
 
               <button
