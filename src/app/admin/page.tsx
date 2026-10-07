@@ -109,6 +109,9 @@ export default function AdminPage() {
     }
   };
 
+  const placementModeRef = useRef<"head" | "tail" | null>(null);
+  placementModeRef.current = placementMode;
+
   // Initialisation de la carte d'administration
   useEffect(() => {
     if (!isAuthenticated || !mapContainerRef.current || mapRef.current) return;
@@ -121,17 +124,33 @@ export default function AdminPage() {
           "osm-dark": {
             type: "raster",
             tiles: [
-              `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY || "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfeTkyeWE2bmIiLCJqdGkiOiJiNDJjZjEyMjY0OTY5YzYwODk4OTVlZmQxOTE3ZWNhOSJ9.U8XMi3bYAi_U2UqdrQOuouTMWVvx-6yl0vzEHHNYcyA"}`,
-              `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?api_key=${process.env.NEXT_PUBLIC_CARTO_API_KEY || "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfeTkyeWE2bmIiLCJqdGkiOiJiNDJjZjEyMjY0OTY5YzYwODk4OTVlZmQxOTE3ZWNhOSJ9.U8XMi3bYAi_U2UqdrQOuouTMWVvx-6yl0vzEHHNYcyA"}`,
+              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+              "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
           },
         },
         layers: [
           {
+            id: "background",
+            type: "background",
+            paint: {
+              "background-color": "#050507",
+            },
+          },
+          {
             id: "osm-dark-tiles",
             type: "raster",
             source: "osm-dark",
+            paint: {
+              "raster-opacity": 0.9,
+              "raster-contrast": 0.1,
+              "raster-saturation": -0.8,
+            },
           },
         ],
       },
@@ -139,7 +158,18 @@ export default function AdminPage() {
       zoom: 14.5,
     });
 
+    map.on("error", (e) => {
+      console.warn("[Admin MapLibre Event]:", e);
+    });
+
+    const triggerResize = () => {
+      if (map) {
+        map.resize();
+      }
+    };
+
     map.on("load", () => {
+      triggerResize();
       map.addSource("official-route", {
         type: "geojson",
         data: nantesData.officialRoute as any,
@@ -162,22 +192,32 @@ export default function AdminPage() {
       const lat = Math.round(e.lngLat.lat * 1000) / 1000;
       const lng = Math.round(e.lngLat.lng * 1000) / 1000;
 
-      if (placementMode === "head") {
+      const currentMode = placementModeRef.current;
+      if (currentMode === "head") {
         setHeadCoords({ lat, lng });
         setPlacementMode(null);
-      } else if (placementMode === "tail") {
+      } else if (currentMode === "tail") {
         setTailCoords({ lat, lng });
         setPlacementMode(null);
       }
     });
 
+    const resizeTimer1 = setTimeout(triggerResize, 100);
+    const resizeTimer2 = setTimeout(triggerResize, 500);
+    const resizeTimer3 = setTimeout(triggerResize, 1200);
+    window.addEventListener("resize", triggerResize);
+
     mapRef.current = map;
 
     return () => {
+      clearTimeout(resizeTimer1);
+      clearTimeout(resizeTimer2);
+      clearTimeout(resizeTimer3);
+      window.removeEventListener("resize", triggerResize);
       map.remove();
       mapRef.current = null;
     };
-  }, [isAuthenticated, placementMode]);
+  }, [isAuthenticated]);
 
   // Synchronisation des marqueurs sur la carte d'administration
   useEffect(() => {

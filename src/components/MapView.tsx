@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
-import * as pmtiles from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { ConsensusMarker, CortegeState, POI, ReportCategory } from "@/types";
@@ -20,14 +19,6 @@ import {
   AlertCircle,
   Navigation,
 } from "lucide-react";
-
-// Initialisation globale du protocole PMTiles une seule fois
-let isProtocolAdded = false;
-if (typeof window !== "undefined" && !isProtocolAdded) {
-  const protocol = new pmtiles.Protocol();
-  maplibregl.addProtocol("pmtiles", protocol.tile);
-  isProtocolAdded = true;
-}
 
 interface MapViewProps {
   consensusMarkers: ConsensusMarker[];
@@ -74,17 +65,14 @@ export function MapView({
       "osm-dark": {
         type: "raster",
         tiles: [
-          `https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png${cartoQuery}`,
-          `https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png${cartoQuery}`,
-          `https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png${cartoQuery}`,
+          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+          "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+          "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
         ],
         tileSize: 256,
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      },
-      "nantes-pmtiles-source": {
-        type: "vector",
-        url: `pmtiles://${typeof window !== "undefined" && window.location.pathname.startsWith("/legalmap") ? "/legalmap" : ""}/tiles/nantes.pmtiles`,
       },
     },
     layers: [
@@ -102,7 +90,7 @@ export function MapView({
         minzoom: 0,
         maxzoom: 19,
         paint: {
-          "raster-opacity": 0.85,
+          "raster-opacity": 0.9,
           "raster-contrast": 0.1,
           "raster-saturation": -0.8,
         },
@@ -131,8 +119,20 @@ export function MapView({
       "bottom-right"
     );
 
+    // Événement d'erreur non bloquant
+    map.on("error", (e) => {
+      console.warn("[MapLibre Event]:", e);
+    });
+
+    const triggerResize = () => {
+      if (map) {
+        map.resize();
+      }
+    };
+
     map.on("load", () => {
       setMapLoaded(true);
+      triggerResize();
 
       // 1. Ajout de la source du parcours officiel GeoJSON de Nantes
       map.addSource("official-route-source", {
@@ -223,9 +223,19 @@ export function MapView({
       }
     });
 
+    // Forcer le recalcul de dimension du canvas WebGL dès que le DOM est stabilisé
+    const resizeTimer1 = setTimeout(triggerResize, 100);
+    const resizeTimer2 = setTimeout(triggerResize, 500);
+    const resizeTimer3 = setTimeout(triggerResize, 1200);
+    window.addEventListener("resize", triggerResize);
+
     mapRef.current = map;
 
     return () => {
+      clearTimeout(resizeTimer1);
+      clearTimeout(resizeTimer2);
+      clearTimeout(resizeTimer3);
+      window.removeEventListener("resize", triggerResize);
       map.remove();
       mapRef.current = null;
     };

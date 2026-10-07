@@ -4,7 +4,7 @@
  * ZÉRO télémétrie, ZÉRO tracking.
  */
 
-const CACHE_NAME = "legalmaps-v1.0.0";
+const CACHE_NAME = "legalmaps-v1.0.1";
 
 const PRECACHE_URLS = [
   "./",
@@ -12,7 +12,6 @@ const PRECACHE_URLS = [
   "./icons/icon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./tiles/nantes.pmtiles",
 ];
 
 // Installation : pré-mise en cache des ressources critiques

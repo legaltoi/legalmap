@@ -6,6 +6,7 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { ActionDock } from "@/components/ActionDock";
 import { LegalSheet } from "@/components/LegalSheet";
 import { LegalNotice } from "@/components/LegalNotice";
+import { CartoBuilderModal } from "@/components/CartoBuilderModal";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
 import { CortegeState, ReportCategory } from "@/types";
@@ -40,6 +41,7 @@ export default function HomePage() {
   // Modales d'information
   const [isLegalSheetOpen, setIsLegalSheetOpen] = useState(false);
   const [isLegalNoticeOpen, setIsLegalNoticeOpen] = useState(false);
+  const [isCartoModalOpen, setIsCartoModalOpen] = useState(false);
 
   // Mode de pointage direct sur carte
   const [activeCategoryToPoint, setActiveCategoryToPoint] = useState<ReportCategory | null>(null);
@@ -118,6 +120,7 @@ export default function HomePage() {
         pendingCount={pendingCount}
         onOpenLegalSheet={() => setIsLegalSheetOpen(true)}
         onOpenLegalNotice={() => setIsLegalNoticeOpen(true)}
+        onOpenCartoBuilder={() => setIsCartoModalOpen(true)}
         onRecenterCity={() => {
           // Rechargement doux de la vue centre
           const event = new CustomEvent("recenter-nantes");
@@ -146,7 +149,7 @@ export default function HomePage() {
         isSolvingPoW={isSolvingPoW}
       />
 
-      {/* 4. Modales de fiches réflexes et mentions légales */}
+      {/* 4. Modales de fiches réflexes, mentions légales et CARTO Cloud */}
       <LegalSheet
         isOpen={isLegalSheetOpen}
         onClose={() => setIsLegalSheetOpen(false)}
@@ -155,6 +158,11 @@ export default function HomePage() {
       <LegalNotice
         isOpen={isLegalNoticeOpen}
         onClose={() => setIsLegalNoticeOpen(false)}
+      />
+
+      <CartoBuilderModal
+        isOpen={isCartoModalOpen}
+        onClose={() => setIsCartoModalOpen(false)}
       />
     </main>
   );
