@@ -82,7 +82,16 @@
       "coordinates": [-1.5515, 47.2114],
       "address": "1 Place Alexis-Ricordeau, 44093 Nantes",
       "phone": "02 40 08 33 33",
-      "emergencyInfo": "Accès urgences 24h/24 par le quai Moncousu. Permanence médico-légale."
+      "emergencyInfo": "Accès urgences 24h/24 par le quai Moncousu. Permanence médico-légale et UMJ."
+    },
+    {
+      "id": "urgences-ophtalmo-chu",
+      "name": "Urgences Ophtalmologiques CHU Nantes",
+      "category": "HOSPITAL",
+      "coordinates": [-1.5522, 47.2118],
+      "address": "1 Place Alexis-Ricordeau (Bât. Jean Monnet), 44093 Nantes",
+      "phone": "02 40 08 35 35",
+      "emergencyInfo": "Spécialisé traumatologie oculaire, brûlures chimiques et projection lacrymogène sévère."
     },
     {
       "id": "clinique-breteche",
@@ -91,58 +100,259 @@
       "coordinates": [-1.5458, 47.2241],
       "address": "3 Rue de la Béraudière, 44000 Nantes",
       "phone": "02 51 86 86 86",
-      "emergencyInfo": "Service de soins non programmés en journée."
+      "emergencyInfo": "Soins non programmés en journée : plaies, sutures et traumatologie légère."
+    },
+    {
+      "id": "sos-medecins-nantes",
+      "name": "SOS Médecins Nantes (Centre de Consultation)",
+      "category": "HOSPITAL",
+      "coordinates": [-1.5385, 47.214],
+      "address": "17 Quai Magellan, 44000 Nantes",
+      "phone": "02 40 50 30 30",
+      "emergencyInfo": "Consultations médicales d'urgence 7j/7 sans rendez-vous pour blessures sans pronostic vital."
+    },
+    {
+      "id": "samu-44",
+      "name": "SAMU 44 / Centre 15",
+      "category": "HOSPITAL",
+      "coordinates": [-1.551, 47.2105],
+      "address": "CHU Nantes (Quai Moncousu), 44000 Nantes",
+      "phone": "15",
+      "emergencyInfo": "Numéro d'urgence médicale vitale absolue (accessible même sans crédit téléphonique)."
     },
     {
       "id": "pharmacie-royale",
       "name": "Pharmacie Royale de Paris (Garde / 24h)",
       "category": "PHARMACY",
       "coordinates": [-1.5588, 47.2151],
-      "address": "Place Royale, 44000 Nantes",
+      "address": "1 Place Royale, 44000 Nantes",
       "phone": "02 40 48 64 22",
-      "emergencyInfo": "Pharmacie centrale accessible depuis le parcours. Sérum physiologique et pansements."
+      "emergencyInfo": "Pharmacie centrale accessible depuis le parcours. Sérum physiologique stérile, compresses et pansements."
     },
     {
       "id": "pharmacie-commerce",
       "name": "Pharmacie du Commerce",
       "category": "PHARMACY",
       "coordinates": [-1.5574, 47.2137],
-      "address": "Place du Commerce, 44000 Nantes",
+      "address": "15 Place du Commerce, 44000 Nantes",
       "phone": "02 40 48 50 15",
-      "emergencyInfo": "Premier secours pharmaceutique."
+      "emergencyInfo": "Premier secours pharmaceutique au cœur du pôle transports Commerce."
+    },
+    {
+      "id": "pharmacie-bretagne",
+      "name": "Pharmacie de Bretagne",
+      "category": "PHARMACY",
+      "coordinates": [-1.5583, 47.2198],
+      "address": "2 Place de Bretagne, 44000 Nantes",
+      "phone": "02 40 48 42 16",
+      "emergencyInfo": "Au pied de la Tour Bretagne, accès direct depuis le carrefour de rassemblement."
+    },
+    {
+      "id": "pharmacie-lafayette-marne",
+      "name": "Pharmacie Lafayette de la Marne",
+      "category": "PHARMACY",
+      "coordinates": [-1.5555, 47.2158],
+      "address": "20 Rue de la Marne, 44000 Nantes",
+      "phone": "02 40 47 72 32",
+      "emergencyInfo": "Grande pharmacie de centre-ville, stocks importants de matériel de premier secours."
+    },
+    {
+      "id": "pharmacie-feydeau",
+      "name": "Pharmacie Feydeau",
+      "category": "PHARMACY",
+      "coordinates": [-1.5546, 47.2139],
+      "address": "3 Allée Duguay Trouin (Cours 50 Otages), 44000 Nantes",
+      "phone": "02 40 47 18 10",
+      "emergencyInfo": "Accessible directement depuis l'axe central Feydeau / 50 Otages."
+    },
+    {
+      "id": "pharmacie-bourse",
+      "name": "Pharmacie de la Bourse",
+      "category": "PHARMACY",
+      "coordinates": [-1.5604, 47.213],
+      "address": "8 Place de la Bourse, 44000 Nantes",
+      "phone": "02 40 48 54 98",
+      "emergencyInfo": "Proche médiathèque Jacques Demy et quai de la Fosse."
+    },
+    {
+      "id": "pharmacie-gare-nord",
+      "name": "Pharmacie de la Gare (Nantes Nord)",
+      "category": "PHARMACY",
+      "coordinates": [-1.5428, 47.2175],
+      "address": "35 Boulevard de Stalingrad (face Gare Nord), 44000 Nantes",
+      "phone": "02 40 74 13 41",
+      "emergencyInfo": "Zone de repli et de dispersion face à la gare ferroviaire."
+    },
+    {
+      "id": "pharmacie-saint-nicolas",
+      "name": "Pharmacie Saint-Nicolas",
+      "category": "PHARMACY",
+      "coordinates": [-1.557, 47.2163],
+      "address": "5 Rue Affre (face Basilique Saint-Nicolas), 44000 Nantes",
+      "phone": "02 40 48 44 26",
+      "emergencyInfo": "Proche de la Place Royale et de la Rue du Calvaire."
     },
     {
       "id": "fontaine-miroir",
       "name": "Point d'Eau Potable - Miroir d'Eau",
       "category": "WATER",
       "coordinates": [-1.5492, 47.2155],
-      "address": "Esplanade du Miroir d'Eau",
-      "emergencyInfo": "Borne fontaine d'eau courante potable - rinçage oculaire."
+      "address": "Esplanade du Miroir d'Eau (face Château), 44000 Nantes",
+      "emergencyInfo": "Borne fontaine d'eau potable municipale en continu - rinçage oculaire d'urgence et réhydratation."
     },
     {
       "id": "fontaine-bouffay",
       "name": "Point d'Eau Potable - Place du Bouffay",
       "category": "WATER",
       "coordinates": [-1.5529, 47.2156],
-      "address": "Angle Rue des Petites Écuries",
-      "emergencyInfo": "Borne fontaine municipale active."
+      "address": "Place du Bouffay (angle Rue des Petites Écuries), 44000 Nantes",
+      "emergencyInfo": "Borne fontaine municipale d'eau potable active."
     },
     {
       "id": "fontaine-mercoeur",
       "name": "Point d'Eau Potable - Square Élisa-Mercœur",
       "category": "WATER",
       "coordinates": [-1.5485, 47.2131],
-      "address": "Square Mercœur (près gare tram)",
+      "address": "Square Mercœur (proche station tramway), 44000 Nantes",
       "emergencyInfo": "Robinet d'eau potable public disponible."
+    },
+    {
+      "id": "fontaine-wallace-cambronne",
+      "name": "Fontaine Wallace - Cours Cambronne",
+      "category": "WATER",
+      "coordinates": [-1.5627, 47.2128],
+      "address": "Cours Cambronne (proche Place Graslin), 44000 Nantes",
+      "emergencyInfo": "Fontaine Wallace en fonte verte, eau potable courante continue."
+    },
+    {
+      "id": "fontaine-wallace-bourse",
+      "name": "Fontaine Wallace - Place de la Bourse",
+      "category": "WATER",
+      "coordinates": [-1.5595, 47.2134],
+      "address": "Place de la Bourse (face Fnac), 44000 Nantes",
+      "emergencyInfo": "Fontaine Wallace historique en accès libre."
+    },
+    {
+      "id": "fontaine-fleuriot",
+      "name": "Point d'Eau Potable - Square Fleuriot de Langle",
+      "category": "WATER",
+      "coordinates": [-1.5552, 47.215],
+      "address": "Angle Rue de la Barillerie & Cours des 50 Otages, 44000 Nantes",
+      "emergencyInfo": "Borne d'eau potable municipale sur l'axe central."
+    },
+    {
+      "id": "fontaine-viarme",
+      "name": "Point d'Eau Potable - Place Viarme",
+      "category": "WATER",
+      "coordinates": [-1.5618, 47.2225],
+      "address": "Place Viarme (côté halle), 44000 Nantes",
+      "emergencyInfo": "Borne d'eau potable publique en accès libre."
+    },
+    {
+      "id": "fontaine-gare-nord",
+      "name": "Point d'Eau Potable - Parvis Gare Nord",
+      "category": "WATER",
+      "coordinates": [-1.5435, 47.2185],
+      "address": "Boulevard de Stalingrad (parvis gare nord), 44000 Nantes",
+      "emergencyInfo": "Borne fontaine publique extérieure près du Jardin des Plantes."
+    },
+    {
+      "id": "fontaine-versailles",
+      "name": "Point d'Eau Potable - Île de Versailles",
+      "category": "WATER",
+      "coordinates": [-1.554, 47.2255],
+      "address": "Quai de Versailles (proche passerelle Erdre), 44000 Nantes",
+      "emergencyInfo": "Point d'eau potable public le long des berges de l'Erdre."
+    },
+    {
+      "id": "fontaine-cirque",
+      "name": "Point d'Eau Potable - Place du Cirque",
+      "category": "WATER",
+      "coordinates": [-1.5556, 47.2173],
+      "address": "Cours des 50 Otages (station Cirque), 44000 Nantes",
+      "emergencyInfo": "Borne fontaine municipale sur le terre-plein central."
     },
     {
       "id": "barreau-nantes-palais",
       "name": "Maison de l'Avocat (Barreau de Nantes)",
       "category": "EMERGENCY",
       "coordinates": [-1.5649, 47.2081],
-      "address": "25 Rue La Noue Bras de Fer (Palais de Justice)",
+      "address": "25 Rue La Noue Bras de Fer (Palais de Justice), 44200 Nantes",
       "phone": "02 40 20 48 40",
-      "emergencyInfo": "Permanence des gardes à vue et commis d'office pénal."
+      "emergencyInfo": "Permanence des gardes à vue, commis d'office pénal et assistance juridique immédiate."
+    },
+    {
+      "id": "ldh-bourse-travail",
+      "name": "Ligue des Droits de l'Homme (LDH Nantes)",
+      "category": "EMERGENCY",
+      "coordinates": [-1.568, 47.205],
+      "address": "Bourse du Travail, 9 Place de la Gare de l'État, 44200 Nantes",
+      "phone": "02 51 84 03 55",
+      "emergencyInfo": "Observatoire des libertés publiques et signalement des violences policières."
+    },
+    {
+      "id": "cite-judiciaire-droits",
+      "name": "Cité Judiciaire (Défenseurs des Droits)",
+      "category": "EMERGENCY",
+      "coordinates": [-1.564, 47.2078],
+      "address": "19 Quai François Mitterrand, 44200 Nantes",
+      "emergencyInfo": "Accueil juridique d'urgence et protection des droits fondamentaux."
+    },
+    {
+      "id": "toilette-commerce",
+      "name": "Toilettes Publiques - Place du Commerce",
+      "category": "TOILET",
+      "coordinates": [-1.5586, 47.213],
+      "address": "Place du Commerce (allée Brancas), 44000 Nantes",
+      "emergencyInfo": "Sanisette automatique gratuite 24h/24, accessible PMR."
+    },
+    {
+      "id": "toilette-bretagne",
+      "name": "Toilettes Publiques - Place de Bretagne",
+      "category": "TOILET",
+      "coordinates": [-1.5585, 47.2192],
+      "address": "Place de Bretagne (côté Poste), 44000 Nantes",
+      "emergencyInfo": "Sanisette automatique autonettoyante gratuite."
+    },
+    {
+      "id": "toilette-miroir",
+      "name": "Toilettes Publiques - Miroir d'Eau / Château",
+      "category": "TOILET",
+      "coordinates": [-1.5496, 47.2152],
+      "address": "Esplanade du Miroir d'Eau, 44000 Nantes",
+      "emergencyInfo": "Bloc sanitaire public gratuit."
+    },
+    {
+      "id": "toilette-petite-hollande",
+      "name": "Toilettes Publiques - Place Petite Hollande",
+      "category": "TOILET",
+      "coordinates": [-1.5608, 47.2115],
+      "address": "Place de la Petite Hollande (quai de la Fosse), 44000 Nantes",
+      "emergencyInfo": "Sanisette municipale gratuite 24h/24."
+    },
+    {
+      "id": "toilette-mercoeur",
+      "name": "Toilettes Publiques - Square Mercœur",
+      "category": "TOILET",
+      "coordinates": [-1.5482, 47.2133],
+      "address": "Square Mercœur (allée du Port Maillard), 44000 Nantes",
+      "emergencyInfo": "Sanisette publique gratuite."
+    },
+    {
+      "id": "toilette-pommeraye",
+      "name": "Toilettes Publiques - Graslin / Pommeraye",
+      "category": "TOILET",
+      "coordinates": [-1.5605, 47.214],
+      "address": "Rue Crébillon (près passage Pommeraye), 44000 Nantes",
+      "emergencyInfo": "Sanisette publique gratuite."
+    },
+    {
+      "id": "toilette-gare-nord",
+      "name": "Toilettes Publiques - Gare Nord",
+      "category": "TOILET",
+      "coordinates": [-1.5425, 47.2172],
+      "address": "Boulevard de Stalingrad (parvis gare nord), 44000 Nantes",
+      "emergencyInfo": "Sanisette automatique accessible PMR."
     }
   ]
 }

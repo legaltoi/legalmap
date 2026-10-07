@@ -100,7 +100,7 @@ export interface SignedCortegePayload {
 /**
  * Point d'intérêt statique d'urgence sanitaire et vitale
  */
-export type POICategory = "HOSPITAL" | "PHARMACY" | "WATER" | "EMERGENCY";
+export type POICategory = "HOSPITAL" | "PHARMACY" | "WATER" | "EMERGENCY" | "TOILET";
 
 export interface POI {
   id: string;

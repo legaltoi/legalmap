@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import * as pmtiles from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { ConsensusMarker, CortegeState, POI, ReportCategory } from "@/types";
+import { ConsensusMarker, CortegeState, POI, POICategory, ReportCategory } from "@/types";
 import nantesData from "@/config/cities/nantes.json";
 import nantesBaseGeoJson from "@/config/cities/nantes-base.json";
 import { REPORT_CATEGORIES } from "@/config/categories";
@@ -21,6 +21,52 @@ import {
   AlertCircle,
   Navigation,
 } from "lucide-react";
+
+export const POI_META: Record<
+  POICategory,
+  { label: string; icon: string; border: string; bg: string; text: string; badge: string }
+> = {
+  WATER: {
+    label: "Eau & Rinçage",
+    icon: "💧",
+    border: "border-sky-400/80",
+    bg: "bg-sky-950/85",
+    text: "text-sky-300",
+    badge: "bg-sky-500/10 border-sky-500/30 text-sky-400",
+  },
+  PHARMACY: {
+    label: "Pharmacie",
+    icon: "💊",
+    border: "border-emerald-400/80",
+    bg: "bg-emerald-950/85",
+    text: "text-emerald-300",
+    badge: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
+  },
+  HOSPITAL: {
+    label: "Urgences & Soins",
+    icon: "🏥",
+    border: "border-red-400/80",
+    bg: "bg-red-950/85",
+    text: "text-red-300",
+    badge: "bg-red-500/10 border-red-500/30 text-red-400",
+  },
+  EMERGENCY: {
+    label: "Droits & Juridique",
+    icon: "⚖️",
+    border: "border-purple-400/80",
+    bg: "bg-purple-950/85",
+    text: "text-purple-300",
+    badge: "bg-purple-500/10 border-purple-500/30 text-purple-400",
+  },
+  TOILET: {
+    label: "Toilettes",
+    icon: "🚻",
+    border: "border-zinc-500/80",
+    bg: "bg-zinc-900/90",
+    text: "text-zinc-300",
+    badge: "bg-zinc-500/10 border-zinc-500/30 text-zinc-400",
+  },
+};
 
 // Enregistrement du protocole PMTiles natif avec résolution d'URL relative
 let isProtocolAdded = false;
@@ -63,7 +109,8 @@ export function MapView({
   const cortegeHeadMarkerRef = useRef<maplibregl.Marker | null>(null);
   const cortegeTailMarkerRef = useRef<maplibregl.Marker | null>(null);
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const poiMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const poiItemsRef = useRef<Map<string, { marker: maplibregl.Marker; category: POICategory }>>(new Map());
+  const [poiCategoryFilter, setPoiCategoryFilter] = useState<"ALL" | POICategory>("ALL");
 
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [selectedConsensus, setSelectedConsensus] = useState<ConsensusMarker | null>(null);
@@ -329,29 +376,19 @@ export function MapView({
         });
       }
 
-      // 2. Création des POIs statiques (Hôpitaux, Pharmacies, Points d'Eau)
-      if (poiMarkersRef.current.length === 0) {
+      // 2. Création des POIs statiques (Eau, Pharmacie, Urgences, Juridique, Toilettes)
+      if (poiItemsRef.current.size === 0) {
         nantesData.pois.forEach((poi) => {
+          const cat = poi.category as POICategory;
+          const meta = POI_META[cat] || POI_META.WATER;
+
           const el = document.createElement("div");
-          el.className = "poi-marker cursor-pointer";
+          el.className = "poi-marker cursor-pointer group transition-transform duration-150 hover:scale-125 z-10 hover:z-30";
           el.setAttribute("title", poi.name);
 
-          let iconEmoji = "💧";
-          let bgClass = "bg-blue-600/80 border-blue-400";
-          if (poi.category === "HOSPITAL") {
-            iconEmoji = "🏥";
-            bgClass = "bg-red-600/90 border-red-300";
-          } else if (poi.category === "PHARMACY") {
-            iconEmoji = "💊";
-            bgClass = "bg-emerald-600/80 border-emerald-300";
-          } else if (poi.category === "EMERGENCY") {
-            iconEmoji = "⚖️";
-            bgClass = "bg-purple-600/80 border-purple-300";
-          }
-
           el.innerHTML = `
-            <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 ${bgClass} shadow-lg text-sm select-none transform hover:scale-125 transition-transform">
-              ${iconEmoji}
+            <div class="w-6 h-6 rounded-full border ${meta.border} ${meta.bg} flex items-center justify-center shadow-md backdrop-blur-sm text-[11px] select-none hover:border-white transition-colors">
+              ${meta.icon}
             </div>
           `;
 
@@ -364,7 +401,7 @@ export function MapView({
             .setLngLat(poi.coordinates as [number, number])
             .addTo(map);
 
-          poiMarkersRef.current.push(marker);
+          poiItemsRef.current.set(poi.id, { marker, category: cat });
         });
       }
     };
@@ -395,10 +432,24 @@ export function MapView({
       clearTimeout(resizeTimer2);
       clearTimeout(resizeTimer3);
       window.removeEventListener("resize", triggerResize);
+      poiItemsRef.current.forEach(({ marker }) => marker.remove());
+      poiItemsRef.current.clear();
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Filtrage dynamique des POIs sur la carte selon la catégorie sélectionnée
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    poiItemsRef.current.forEach(({ marker, category }) => {
+      const isVisible = poiCategoryFilter === "ALL" || poiCategoryFilter === category;
+      const el = marker.getElement();
+      if (el) {
+        el.style.display = isVisible ? "block" : "none";
+      }
+    });
+  }, [poiCategoryFilter, mapLoaded]);
 
   // Détection & mise à jour du pointeur de géolocalisation locale utilisateur
   useEffect(() => {
@@ -621,6 +672,40 @@ export function MapView({
         className={`w-full h-full ${isMapSelectActive ? "cursor-crosshair" : "cursor-grab"}`}
       />
 
+      {/* Barre de filtres POI minimaliste */}
+      <div className="absolute top-16 left-3 right-3 sm:left-4 sm:right-auto z-20 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <button
+          onClick={() => setPoiCategoryFilter("ALL")}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all whitespace-nowrap shadow-sm ${
+            poiCategoryFilter === "ALL"
+              ? "bg-white text-black border-white shadow-md scale-105"
+              : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700"
+          }`}
+        >
+          Tous ({nantesData.pois.length})
+        </button>
+        {(["WATER", "PHARMACY", "HOSPITAL", "EMERGENCY", "TOILET"] as POICategory[]).map((cat) => {
+          const meta = POI_META[cat];
+          const count = nantesData.pois.filter((p) => p.category === cat).length;
+          const isActive = poiCategoryFilter === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setPoiCategoryFilter(isActive ? "ALL" : cat)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
+                isActive
+                  ? `${meta.bg} ${meta.text} border-current shadow-md scale-105`
+                  : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
+              }`}
+            >
+              <span>{meta.icon}</span>
+              <span>{meta.label}</span>
+              <span className="text-[9px] opacity-75 font-mono">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Boutons d'action flottants latéraux (Recentrement, GPS) */}
       <div className="absolute right-3 bottom-28 sm:bottom-24 z-20 flex flex-col gap-2">
         {/* Recentrer sur ma position GPS */}
@@ -650,16 +735,17 @@ export function MapView({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 sm:inset-auto sm:top-20 sm:left-4 z-40 flex items-end sm:items-start justify-center p-4 bg-black/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
+          className="fixed inset-0 sm:inset-auto sm:top-28 sm:left-4 z-40 flex items-end sm:items-start justify-center p-4 bg-black/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
         >
           <div className="w-full max-w-sm bg-[#101014] border border-zinc-700 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 font-mono">
-                  Point d&apos;Urgence Vital
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono border ${POI_META[selectedPoi.category]?.badge || "text-cyan-400 border-cyan-500/30"}`}>
+                  <span>{POI_META[selectedPoi.category]?.icon}</span>
+                  <span>{POI_META[selectedPoi.category]?.label || "Point Utile"}</span>
                 </span>
-                <h4 className="font-bold text-sm text-white mt-0.5">{selectedPoi.name}</h4>
-                <p className="text-xs text-zinc-400 mt-1">{selectedPoi.address}</p>
+                <h4 className="font-bold text-sm text-white mt-1.5">{selectedPoi.name}</h4>
+                <p className="text-xs text-zinc-400 mt-0.5">{selectedPoi.address}</p>
               </div>
               <button
                 onClick={() => setSelectedPoi(null)}
@@ -671,22 +757,38 @@ export function MapView({
             </div>
 
             {selectedPoi.emergencyInfo && (
-              <div className="mt-3 p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-300">
+              <div className="mt-3 p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-300 leading-relaxed">
                 {selectedPoi.emergencyInfo}
               </div>
             )}
 
-            {selectedPoi.phone && (
-              <div className="mt-3">
+            <div className="mt-3 flex gap-2">
+              {selectedPoi.phone && (
                 <a
                   href={`tel:${selectedPoi.phone.replace(/\s+/g, "")}`}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg active:scale-95"
                 >
                   <Phone className="w-3.5 h-3.5" />
-                  Appeler {selectedPoi.phone}
+                  Appeler ({selectedPoi.phone})
                 </a>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => {
+                  if (mapRef.current) {
+                    mapRef.current.flyTo({
+                      center: selectedPoi.coordinates as [number, number],
+                      zoom: 16.5,
+                      essential: true,
+                    });
+                  }
+                  setSelectedPoi(null);
+                }}
+                className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded-xl text-xs font-bold transition-colors border border-zinc-700 flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <Compass className="w-3.5 h-3.5 text-cyan-400" />
+                Centrer la vue
+              </button>
+            </div>
           </div>
         </div>
       )}
