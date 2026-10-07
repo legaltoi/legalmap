@@ -61,7 +61,9 @@ export function MapView({
   const [isLocating, setIsLocating] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  const cartoApiKey = process.env.NEXT_PUBLIC_CARTO_API_KEY || "cb1_3imj_1_138a3238d2c2b9954ef65901";
+  const cartoApiKey =
+    process.env.NEXT_PUBLIC_CARTO_API_KEY ||
+    "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfeTkyeWE2bmIiLCJqdGkiOiJiNDJjZjEyMjY0OTY5YzYwODk4OTVlZmQxOTE3ZWNhOSJ9.U8XMi3bYAi_U2UqdrQOuouTMWVvx-6yl0vzEHHNYcyA";
   const cartoQuery = cartoApiKey ? `?api_key=${cartoApiKey}` : "";
 
   // Style de carte sombre haute lisibilité (OLED optimisé)
