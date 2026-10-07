@@ -1,0 +1,149 @@
+{
+  "id": "nantes",
+  "name": "Nantes",
+  "region": "Loire-Atlantique (44)",
+  "center": [-1.5536, 47.2173],
+  "defaultZoom": 14.5,
+  "minZoom": 11,
+  "maxZoom": 18,
+  "bounds": [
+    [-1.63, 47.17],
+    [-1.48, 47.26]
+  ],
+  "officialRoute": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "name": "Parcours Déclaré / Officiel",
+          "description": "Itinéraire de la mobilisation intersyndicale et citoyenne",
+          "type": "route"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [-1.5583, 47.2132],
+            [-1.5562, 47.2144],
+            [-1.5537, 47.2155],
+            [-1.5568, 47.2176],
+            [-1.5582, 47.2195],
+            [-1.5561, 47.2208],
+            [-1.5539, 47.2212],
+            [-1.5521, 47.2185],
+            [-1.5512, 47.2158],
+            [-1.5488, 47.2152]
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "name": "Point de Rassemblement Initial",
+          "description": "Place du Commerce (14h00)",
+          "type": "start"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-1.5583, 47.2132]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "name": "Point d'Étape - Place de Bretagne",
+          "description": "Regroupement & jonction",
+          "type": "rally_point"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-1.5582, 47.2195]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "name": "Point de Dispersion Déclaré",
+          "description": "Miroir d'Eau / Château des Ducs",
+          "type": "dispersal"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-1.5488, 47.2152]
+        }
+      }
+    ]
+  },
+  "pois": [
+    {
+      "id": "chu-hotel-dieu",
+      "name": "CHU Hôtel-Dieu (Urgences Adultes & Traumato)",
+      "category": "HOSPITAL",
+      "coordinates": [-1.5515, 47.2114],
+      "address": "1 Place Alexis-Ricordeau, 44093 Nantes",
+      "phone": "02 40 08 33 33",
+      "emergencyInfo": "Accès urgences 24h/24 par le quai Moncousu. Permanence médico-légale."
+    },
+    {
+      "id": "clinique-breteche",
+      "name": "Clinique Bretéché",
+      "category": "HOSPITAL",
+      "coordinates": [-1.5458, 47.2241],
+      "address": "3 Rue de la Béraudière, 44000 Nantes",
+      "phone": "02 51 86 86 86",
+      "emergencyInfo": "Service de soins non programmés en journée."
+    },
+    {
+      "id": "pharmacie-royale",
+      "name": "Pharmacie Royale de Paris (Garde / 24h)",
+      "category": "PHARMACY",
+      "coordinates": [-1.5588, 47.2151],
+      "address": "Place Royale, 44000 Nantes",
+      "phone": "02 40 48 64 22",
+      "emergencyInfo": "Pharmacie centrale accessible depuis le parcours. Sérum physiologique et pansements."
+    },
+    {
+      "id": "pharmacie-commerce",
+      "name": "Pharmacie du Commerce",
+      "category": "PHARMACY",
+      "coordinates": [-1.5574, 47.2137],
+      "address": "Place du Commerce, 44000 Nantes",
+      "phone": "02 40 48 50 15",
+      "emergencyInfo": "Premier secours pharmaceutique."
+    },
+    {
+      "id": "fontaine-miroir",
+      "name": "Point d'Eau Potable - Miroir d'Eau",
+      "category": "WATER",
+      "coordinates": [-1.5492, 47.2155],
+      "address": "Esplanade du Miroir d'Eau",
+      "emergencyInfo": "Borne fontaine d'eau courante potable - rinçage oculaire."
+    },
+    {
+      "id": "fontaine-bouffay",
+      "name": "Point d'Eau Potable - Place du Bouffay",
+      "category": "WATER",
+      "coordinates": [-1.5529, 47.2156],
+      "address": "Angle Rue des Petites Écuries",
+      "emergencyInfo": "Borne fontaine municipale active."
+    },
+    {
+      "id": "fontaine-mercoeur",
+      "name": "Point d'Eau Potable - Square Élisa-Mercœur",
+      "category": "WATER",
+      "coordinates": [-1.5485, 47.2131],
+      "address": "Square Mercœur (près gare tram)",
+      "emergencyInfo": "Robinet d'eau potable public disponible."
+    },
+    {
+      "id": "barreau-nantes-palais",
+      "name": "Maison de l'Avocat (Barreau de Nantes)",
+      "category": "EMERGENCY",
+      "coordinates": [-1.5649, 47.2081],
+      "address": "25 Rue La Noue Bras de Fer (Palais de Justice)",
+      "phone": "02 40 20 48 40",
+      "emergencyInfo": "Permanence des gardes à vue et commis d'office pénal."
+    }
+  ]
+}
+
