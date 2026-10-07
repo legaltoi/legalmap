@@ -1,0 +1,180 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "La Loire (Bras de la Madeleine)", "class": "water" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-1.595, 47.201],
+            [-1.572, 47.205],
+            [-1.555, 47.208],
+            [-1.542, 47.212],
+            [-1.525, 47.216],
+            [-1.505, 47.219],
+            [-1.505, 47.222],
+            [-1.526, 47.219],
+            [-1.543, 47.215],
+            [-1.556, 47.211],
+            [-1.573, 47.208],
+            [-1.595, 47.204],
+            [-1.595, 47.201]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Canal Saint-Félix & Erdre", "class": "water" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-1.545, 47.214],
+            [-1.542, 47.217],
+            [-1.544, 47.222],
+            [-1.548, 47.227],
+            [-1.551, 47.232],
+            [-1.554, 47.232],
+            [-1.551, 47.227],
+            [-1.547, 47.222],
+            [-1.545, 47.217],
+            [-1.547, 47.214],
+            [-1.545, 47.214]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Jardin des Plantes", "class": "park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-1.544, 47.218],
+            [-1.539, 47.218],
+            [-1.539, 47.222],
+            [-1.544, 47.222],
+            [-1.544, 47.218]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Cours des 50 Otages", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5575, 47.2132],
+          [-1.5562, 47.2155],
+          [-1.5552, 47.2180],
+          [-1.5545, 47.2210],
+          [-1.5540, 47.2235]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Rue de Strasbourg", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5505, 47.2148],
+          [-1.5510, 47.2175],
+          [-1.5515, 47.2205],
+          [-1.5520, 47.2225]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Quai de la Fosse", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5750, 47.2085],
+          [-1.5660, 47.2105],
+          [-1.5590, 47.2128],
+          [-1.5575, 47.2132]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Allée Baco / Quai Magellan", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5575, 47.2132],
+          [-1.5510, 47.2138],
+          [-1.5450, 47.2145],
+          [-1.5380, 47.2155]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Boulevard Guist'hau", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5665, 47.2160],
+          [-1.5650, 47.2190],
+          [-1.5640, 47.2220]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Axe Graslin - Royale - Commerce", "class": "street" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5625, 47.2138],
+          [-1.5590, 47.2152],
+          [-1.5562, 47.2144],
+          [-1.5583, 47.2132]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Axe Bouffay - Château", "class": "street" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5562, 47.2144],
+          [-1.5530, 47.2156],
+          [-1.5492, 47.2155],
+          [-1.5475, 47.2165]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Pont Anne de Bretagne", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5660, 47.2105],
+          [-1.5645, 47.2065]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Pont Haudaudine", "class": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-1.5550, 47.2090],
+          [-1.5535, 47.2060]
+        ]
+      }
+    }
+  ]
+}

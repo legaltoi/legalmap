@@ -70,11 +70,11 @@ export function LegalNotice({ isOpen, onClose }: LegalNoticeProps) {
             </div>
             <div className="text-xs space-y-1 text-zinc-400 font-mono">
               <p className="text-zinc-200 font-sans font-medium text-sm mb-1">
-                Plateforme d&apos;hébergement distribué (Edge Serverless / Static CDN) :
+                Plateforme d&apos;hébergement distribué (GitHub Pages / Static CDN) :
               </p>
-              <p>Société : Vercel Inc. / Cloudflare, Inc.</p>
-              <p>Adresse : 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis / 101 Townsend St, San Francisco, CA 94107</p>
-              <p>Support &amp; Signalement abus : legal@vercel.com / abuse@cloudflare.com</p>
+              <p>Hébergeur : GitHub, Inc. (GitHub Pages) / Cloudflare, Inc.</p>
+              <p>Adresse : 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis</p>
+              <p>Support &amp; Signalement abus : support@github.com / abuse@cloudflare.com</p>
             </div>
           </section>
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
+import * as pmtiles from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRealtime } from "@/hooks/useRealtime";
 import { CortegeMovementStatus } from "@/types";
@@ -12,6 +13,23 @@ import {
   CortegeMessageData,
 } from "@/lib/crypto";
 import nantesData from "@/config/cities/nantes.json";
+import nantesBaseGeoJson from "@/config/cities/nantes-base.json";
+
+// Enregistrement du protocole PMTiles natif avec résolution d'URL relative
+let isProtocolAdded = false;
+if (typeof window !== "undefined" && !isProtocolAdded) {
+  const protocol = new pmtiles.Protocol();
+  maplibregl.addProtocol("pmtiles", (params, abortController) => {
+    let url = params.url;
+    if (url.startsWith("pmtiles:///") || !url.includes("://http")) {
+      const path = url.replace(/^pmtiles:\/\//, "");
+      const fullUrl = `${window.location.origin}${path.startsWith("/") ? "" : "/"}${path}`;
+      params = { ...params, url: `pmtiles://${fullUrl}` };
+    }
+    return protocol.tile(params, abortController);
+  });
+  isProtocolAdded = true;
+}
 import {
   ShieldCheck,
   PlayCircle,
@@ -116,22 +134,24 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAuthenticated || !mapContainerRef.current || mapRef.current) return;
 
+    const basePath =
+      typeof window !== "undefined" && window.location.pathname.startsWith("/legalmap")
+        ? "/legalmap"
+        : "";
+    const pmtilesUrl = `pmtiles://${basePath}/tiles/nantes.pmtiles`;
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
         sources: {
-          "osm-dark": {
-            type: "raster",
-            tiles: [
-              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-              "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          "nantes-pmtiles": {
+            type: "vector",
+            url: pmtilesUrl,
+          },
+          "nantes-offline-base": {
+            type: "geojson",
+            data: nantesBaseGeoJson as any,
           },
         },
         layers: [
@@ -139,17 +159,67 @@ export default function AdminPage() {
             id: "background",
             type: "background",
             paint: {
-              "background-color": "#050507",
+              "background-color": "#060608",
             },
           },
           {
-            id: "osm-dark-tiles",
-            type: "raster",
-            source: "osm-dark",
+            id: "water-fill",
+            type: "fill",
+            source: "nantes-offline-base",
+            filter: ["==", "class", "water"],
             paint: {
-              "raster-opacity": 0.9,
-              "raster-contrast": 0.1,
-              "raster-saturation": -0.8,
+              "fill-color": "#081321",
+              "fill-opacity": 0.95,
+            },
+          },
+          {
+            id: "water-outline",
+            type: "line",
+            source: "nantes-offline-base",
+            filter: ["==", "class", "water"],
+            paint: {
+              "line-color": "#112a45",
+              "line-width": 1.5,
+            },
+          },
+          {
+            id: "park-fill",
+            type: "fill",
+            source: "nantes-offline-base",
+            filter: ["==", "class", "park"],
+            paint: {
+              "fill-color": "#07170f",
+              "fill-opacity": 0.8,
+            },
+          },
+          {
+            id: "streets-secondary",
+            type: "line",
+            source: "nantes-offline-base",
+            filter: ["==", "class", "street"],
+            paint: {
+              "line-color": "#181824",
+              "line-width": 2.5,
+            },
+          },
+          {
+            id: "streets-primary",
+            type: "line",
+            source: "nantes-offline-base",
+            filter: ["==", "class", "primary"],
+            paint: {
+              "line-color": "#252538",
+              "line-width": 4.5,
+            },
+          },
+          {
+            id: "pmtiles-streets-layer",
+            type: "line",
+            source: "nantes-pmtiles",
+            "source-layer": "streets",
+            paint: {
+              "line-color": "#1f1f2e",
+              "line-width": 2,
             },
           },
         ],

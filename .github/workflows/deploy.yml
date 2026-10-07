@@ -39,7 +39,6 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_ADMIN_VERIFY_KEY: "909b69715acf5dbc959e1e23c00bdf8868d694214b8cf5d5751f28a8867dce4c"
-          NEXT_PUBLIC_CARTO_API_KEY: "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfeTkyeWE2bmIiLCJqdGkiOiJiNDJjZjEyMjY0OTY5YzYwODk4OTVlZmQxOTE3ZWNhOSJ9.U8XMi3bYAi_U2UqdrQOuouTMWVvx-6yl0vzEHHNYcyA"
           NEXT_PUBLIC_SUPABASE_URL: "https://elpnscywkpsljrxkluij.supabase.co"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscG5zY3l3a3BzbGpyeGtsdWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNjM3NzQsImV4cCI6MjEwNjkzOTc3NH0.MCuxluF1d1XflF3KtkvGJBRBI6Xw1ASILuJCTqB0EHU"
         run: npm run build

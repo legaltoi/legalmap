@@ -2,10 +2,12 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
+import * as pmtiles from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { ConsensusMarker, CortegeState, POI, ReportCategory } from "@/types";
 import nantesData from "@/config/cities/nantes.json";
+import nantesBaseGeoJson from "@/config/cities/nantes-base.json";
 import { REPORT_CATEGORIES } from "@/config/categories";
 import { formatTimeRemaining } from "@/lib/geo";
 import {
@@ -19,6 +21,22 @@ import {
   AlertCircle,
   Navigation,
 } from "lucide-react";
+
+// Enregistrement du protocole PMTiles natif avec résolution d'URL relative
+let isProtocolAdded = false;
+if (typeof window !== "undefined" && !isProtocolAdded) {
+  const protocol = new pmtiles.Protocol();
+  maplibregl.addProtocol("pmtiles", (params, abortController) => {
+    let url = params.url;
+    if (url.startsWith("pmtiles:///") || !url.includes("://http")) {
+      const path = url.replace(/^pmtiles:\/\//, "");
+      const fullUrl = `${window.location.origin}${path.startsWith("/") ? "" : "/"}${path}`;
+      params = { ...params, url: `pmtiles://${fullUrl}` };
+    }
+    return protocol.tile(params, abortController);
+  });
+  isProtocolAdded = true;
+}
 
 interface MapViewProps {
   consensusMarkers: ConsensusMarker[];
@@ -52,27 +70,25 @@ export function MapView({
   const [isLocating, setIsLocating] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  const cartoApiKey =
-    process.env.NEXT_PUBLIC_CARTO_API_KEY ||
-    "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfeTkyeWE2bmIiLCJqdGkiOiJiNDJjZjEyMjY0OTY5YzYwODk4OTVlZmQxOTE3ZWNhOSJ9.U8XMi3bYAi_U2UqdrQOuouTMWVvx-6yl0vzEHHNYcyA";
-  const cartoQuery = cartoApiKey ? `?api_key=${cartoApiKey}` : "";
+  // Détection du chemin de base pour GitHub Pages
+  const basePath =
+    typeof window !== "undefined" && window.location.pathname.startsWith("/legalmap")
+      ? "/legalmap"
+      : "";
+  const pmtilesUrl = `pmtiles://${basePath}/tiles/nantes.pmtiles`;
 
-  // Style de carte sombre haute lisibilité (OLED optimisé)
+  // Style cartographique vectoriel sombre 100 % hors-ligne (OLED optimisé)
   const darkMapStyle: maplibregl.StyleSpecification = {
     version: 8,
-    name: "LegalMaps Dark OLED",
+    name: "LegalMaps Offline Dark Vector",
     sources: {
-      "osm-dark": {
-        type: "raster",
-        tiles: [
-          "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-          "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-        ],
-        tileSize: 256,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      "nantes-pmtiles": {
+        type: "vector",
+        url: pmtilesUrl,
+      },
+      "nantes-offline-base": {
+        type: "geojson",
+        data: nantesBaseGeoJson as any,
       },
     },
     layers: [
@@ -80,19 +96,72 @@ export function MapView({
         id: "background",
         type: "background",
         paint: {
-          "background-color": "#050507",
+          "background-color": "#060608",
+        },
+      },
+      // Eau : La Loire et l'Erdre
+      {
+        id: "water-fill",
+        type: "fill",
+        source: "nantes-offline-base",
+        filter: ["==", "class", "water"],
+        paint: {
+          "fill-color": "#081321",
+          "fill-opacity": 0.95,
         },
       },
       {
-        id: "osm-dark-tiles",
-        type: "raster",
-        source: "osm-dark",
-        minzoom: 0,
-        maxzoom: 19,
+        id: "water-outline",
+        type: "line",
+        source: "nantes-offline-base",
+        filter: ["==", "class", "water"],
         paint: {
-          "raster-opacity": 0.9,
-          "raster-contrast": 0.1,
-          "raster-saturation": -0.8,
+          "line-color": "#112a45",
+          "line-width": 1.5,
+        },
+      },
+      // Parcs et espaces verts
+      {
+        id: "park-fill",
+        type: "fill",
+        source: "nantes-offline-base",
+        filter: ["==", "class", "park"],
+        paint: {
+          "fill-color": "#07170f",
+          "fill-opacity": 0.8,
+        },
+      },
+      // Rues secondaires nantaises
+      {
+        id: "streets-secondary",
+        type: "line",
+        source: "nantes-offline-base",
+        filter: ["==", "class", "street"],
+        paint: {
+          "line-color": "#181824",
+          "line-width": 2.5,
+        },
+      },
+      // Grands boulevards et axes principaux de Nantes
+      {
+        id: "streets-primary",
+        type: "line",
+        source: "nantes-offline-base",
+        filter: ["==", "class", "primary"],
+        paint: {
+          "line-color": "#252538",
+          "line-width": 4.5,
+        },
+      },
+      // Couches vectorielles PMTiles complémentaires (si disponibles)
+      {
+        id: "pmtiles-streets-layer",
+        type: "line",
+        source: "nantes-pmtiles",
+        "source-layer": "streets",
+        paint: {
+          "line-color": "#1f1f2e",
+          "line-width": 2,
         },
       },
     ],

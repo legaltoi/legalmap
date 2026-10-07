@@ -11,7 +11,6 @@ import {
   PlayCircle,
   HelpCircle,
   Layers,
-  Globe,
 } from "lucide-react";
 import { CortegeMovementStatus } from "@/types";
 import { RealtimeStatus } from "@/hooks/useRealtime";
@@ -23,7 +22,6 @@ interface HeaderBarProps {
   onOpenLegalSheet: () => void;
   onOpenLegalNotice: () => void;
   onRecenterCity: () => void;
-  onOpenCartoBuilder?: () => void;
 }
 
 export function HeaderBar({
@@ -33,7 +31,6 @@ export function HeaderBar({
   onOpenLegalSheet,
   onOpenLegalNotice,
   onRecenterCity,
-  onOpenCartoBuilder,
 }: HeaderBarProps) {
   const getStatusBadge = () => {
     switch (realtimeStatus) {
@@ -131,18 +128,6 @@ export function HeaderBar({
         {/* Right: Status & Action Toggles */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {getStatusBadge()}
-
-          {/* CARTO Cloud Builder Button */}
-          {onOpenCartoBuilder && (
-            <button
-              onClick={onOpenCartoBuilder}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/15 hover:bg-blue-500/25 active:bg-blue-500/35 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-bold transition-all touch-manipulation min-h-[36px]"
-              title="Ouvrir la vue CARTO Builder Cloud"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">CARTO Cloud</span>
-            </button>
-          )}
 
           {/* Droits & Fiches Réflexes Button */}
           <button

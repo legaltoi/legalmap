@@ -6,19 +6,18 @@ const isGitHubPages =
   process.env.GITHUB_ACTIONS === "true" ||
   process.env.NEXT_PUBLIC_BASE_PATH === "/legalmap";
 
-const basePath = isGitHubPages ? "/legalmap" : "";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || (isGitHubPages ? "/legalmap" : "");
 
-// Content Security Policy stricte (Défense en profondeur)
+// Content Security Policy stricte (Défense en profondeur - Zéro tiers cartographiques)
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'wasm-unsafe-eval';
   worker-src 'self' blob:;
   child-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org;
+  img-src 'self' data: blob:;
   font-src 'self' data:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.basemaps.cartocdn.com https://*.carto.com;
-  frame-src 'self' https://*.carto.com;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co;
   frame-ancestors 'none';
   base-uri 'self';
   form-action 'self';
@@ -30,8 +29,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   basePath: basePath || undefined,
-  // Mode export statique pour GitHub Pages
-  output: isGitHubPages ? "export" : undefined,
+  // Export statique strict pour GitHub Pages
+  output: "export",
+  trailingSlash: true,
   images: {
     unoptimized: true,
   },
@@ -68,28 +68,6 @@ const nextConfig: NextConfig = {
                 {
                   key: "X-DNS-Prefetch-Control",
                   value: "off",
-                },
-              ],
-            },
-            {
-              source: "/tiles/:path*",
-              headers: [
-                {
-                  key: "Cache-Control",
-                  value: "public, max-age=31536000, immutable",
-                },
-                {
-                  key: "Accept-Ranges",
-                  value: "bytes",
-                },
-              ],
-            },
-            {
-              source: "/manifest.json",
-              headers: [
-                {
-                  key: "Content-Type",
-                  value: "application/manifest+json",
                 },
               ],
             },

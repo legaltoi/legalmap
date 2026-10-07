@@ -18,8 +18,8 @@ function createMinimalPMTiles() {
   });
   const metadataBytes = Buffer.from(metadata, 'utf-8');
 
-  // Root directory: un répertoire vide (1 entrée racine de longueur 0 ou buffer vide)
-  const rootDir = Buffer.alloc(0);
+  // Root directory: 1 octet varint (0x00 = 0 entrées)
+  const rootDir = Buffer.from([0x00]);
 
   const rootDirOffset = headerSize;
   const rootDirLength = rootDir.length;
