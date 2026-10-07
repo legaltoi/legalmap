@@ -9,10 +9,13 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const defaultSupabaseUrl = "https://elpnscywkpsljrxkluij.supabase.co";
 const defaultSupabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscG5zY3l3a3BzbGpyeGtsdWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNjM3NzQsImV4cCI6MjEwNjkzOTc3NH0.MCuxluF1d1XflF3KtkvGJBRBI6Xw1ASILuJCTqB0EHU";
+  "sb_publishable_iPZOlCk9Rj1T6kWLBz8hbg_Od7Nt3Tz";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || defaultSupabaseUrl;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || defaultSupabaseAnonKey;
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  defaultSupabaseAnonKey;
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&

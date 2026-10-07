@@ -49,3 +49,4 @@ export async function fetchWalkingRoute(
   // Fallback résilient en mode hors-ligne : ligne directe reliant les points
   return waypoints;
 }
+

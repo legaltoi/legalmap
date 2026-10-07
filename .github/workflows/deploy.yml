@@ -38,7 +38,8 @@ jobs:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_ADMIN_VERIFY_KEY: "909b69715acf5dbc959e1e23c00bdf8868d694214b8cf5d5751f28a8867dce4c"
           NEXT_PUBLIC_SUPABASE_URL: "https://elpnscywkpsljrxkluij.supabase.co"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscG5zY3l3a3BzbGpyeGtsdWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNjM3NzQsImV4cCI6MjEwNjkzOTc3NH0.MCuxluF1d1XflF3KtkvGJBRBI6Xw1ASILuJCTqB0EHU"
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_iPZOlCk9Rj1T6kWLBz8hbg_Od7Nt3Tz"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_iPZOlCk9Rj1T6kWLBz8hbg_Od7Nt3Tz"
         run: npm run build
 
       - name: Upload artifact
