@@ -133,12 +133,15 @@ export function useRealtime({
         }
       });
 
-    // 2. Canal de l'état officiel du cortège
+    // 2. Canal de l'état officiel du cortège (Broadcast + Presence pour synchroniser les nouveaux arrivants)
     const cortegeChannel = supabase.channel(CHANNELS.CORTEGE, {
       config: {
         broadcast: {
           self: false,
           ack: true,
+        },
+        presence: {
+          key: "cortege-live",
         },
       },
     });
@@ -162,6 +165,31 @@ export function useRealtime({
             routeCoordinates: validCortege.data.routeCoordinates,
             updatedAt: validCortege.data.timestamp,
           });
+        }
+      })
+      .on("presence", { event: "sync" }, () => {
+        const presenceState = cortegeChannel.presenceState();
+        for (const key in presenceState) {
+          const presences = presenceState[key] as any[];
+          for (const item of presences) {
+            if (item?.payload) {
+              const validCortege = validateInboundCortege(item.payload);
+              if (validCortege) {
+                console.info("[Realtime] État cortège synchronisé via Presence :", validCortege.data.status);
+                onCortegeRef.current?.({
+                  status: validCortege.data.status,
+                  head: validCortege.data.head
+                    ? { ...validCortege.data.head, updatedAt: validCortege.data.timestamp }
+                    : null,
+                  tail: validCortege.data.tail
+                    ? { ...validCortege.data.tail, updatedAt: validCortege.data.timestamp }
+                    : null,
+                  routeCoordinates: validCortege.data.routeCoordinates,
+                  updatedAt: validCortege.data.timestamp,
+                });
+              }
+            }
+          }
         }
       })
       .subscribe((subStatus) => {
@@ -301,11 +329,21 @@ export function useRealtime({
         updatedAt: signedPayload.data.timestamp,
       });
 
-      // 3. Diffusion Supabase Realtime
+      // 3. Diffusion Supabase Realtime (Broadcast + Presence pour nouveaux arrivants)
       const supabase = getSupabaseClient();
       if (supabase) {
         try {
           const channel = cortegeChannelRef.current || supabase.channel(CHANNELS.CORTEGE);
+
+          try {
+            await channel.track({
+              payload: signedPayload,
+              updatedAt: Date.now(),
+            });
+          } catch (pErr) {
+            console.warn("[Realtime] Échec channel.track presence:", pErr);
+          }
+
           const sendResult = await channel.send({
             type: "broadcast",
             event: "cortege-state-update",

@@ -49,8 +49,14 @@ import {
   RotateCcw,
   Navigation,
   Copy,
+  GitCommit,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
+import { syncRouteToNantesJson, testGitHubToken, SyncRouteResult } from "@/lib/githubSync";
 
 const EXPECTED_PUBLIC_VERIFY_KEY =
   process.env.NEXT_PUBLIC_ADMIN_VERIFY_KEY || DEFAULT_ADMIN_VERIFY_KEY;
@@ -78,6 +84,15 @@ export default function AdminPage() {
   const [lastBroadcastTime, setLastBroadcastTime] = useState<number | null>(null);
   const [lastBroadcastSig, setLastBroadcastSig] = useState<string | null>(null);
 
+  // État de la synchronisation automatique avec GitHub (nantes.json)
+  const [githubToken, setGithubToken] = useState<string>("");
+  const [autoCommitGithub, setAutoCommitGithub] = useState<boolean>(true);
+  const [isSyncingGithub, setIsSyncingGithub] = useState(false);
+  const [githubSyncResult, setGithubSyncResult] = useState<SyncRouteResult | null>(null);
+  const [isTestingToken, setIsTestingToken] = useState(false);
+  const [tokenTestResult, setTokenTestResult] = useState<{ valid: boolean; error?: string } | null>(null);
+  const [showToken, setShowToken] = useState(false);
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const headMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -89,8 +104,10 @@ export default function AdminPage() {
   routeCoordinatesRef.current = routeCoordinates;
   const isHydratedRef = useRef(false);
   const ADMIN_STORAGE_KEY = "legalmaps_admin_cortege_draft";
+  const GH_TOKEN_KEY = "legalmaps_admin_gh_token";
+  const GH_AUTOCOMMIT_KEY = "legalmaps_admin_gh_autocommit";
 
-  // 1. Récupération du brouillon organisateur depuis localStorage au montage
+  // 1. Récupération du brouillon organisateur et token GitHub depuis localStorage au montage
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -122,6 +139,12 @@ export default function AdminPage() {
           }
         }
       }
+
+      const savedGh = localStorage.getItem(GH_TOKEN_KEY) || process.env.NEXT_PUBLIC_GITHUB_TOKEN || "";
+      if (savedGh) setGithubToken(savedGh);
+
+      const savedAuto = localStorage.getItem(GH_AUTOCOMMIT_KEY);
+      if (savedAuto !== null) setAutoCommitGithub(savedAuto === "true");
     } catch (e) {
       console.warn("[LegalMaps Admin] Erreur lors de la lecture du brouillon local:", e);
     } finally {
@@ -178,11 +201,22 @@ export default function AdminPage() {
     },
   });
 
-  // Vérification de la clé privée Ed25519 via l'ancre d'URL (#priv=...)
+  // Vérification de la clé privée Ed25519 via l'ancre d'URL (#priv=...) et extraction token GitHub (&gh=...)
   useEffect(() => {
     const checkHashKey = () => {
       if (typeof window === "undefined") return;
       const hash = window.location.hash;
+
+      // Détection optionnelle du token GitHub passé dans l'URL (#priv=...&gh=github_pat_...)
+      const ghMatch = hash.match(/[&?]gh=([^&]+)/);
+      if (ghMatch && ghMatch[1]) {
+        const extractedToken = decodeURIComponent(ghMatch[1]);
+        setGithubToken(extractedToken);
+        try {
+          localStorage.setItem(GH_TOKEN_KEY, extractedToken);
+        } catch {}
+      }
+
       const match = hash.match(/#priv=([0-9a-fA-F]{64,128})/);
       if (match && match[1]) {
         const priv = match[1].toLowerCase();
@@ -205,6 +239,29 @@ export default function AdminPage() {
     window.addEventListener("hashchange", checkHashKey);
     return () => window.removeEventListener("hashchange", checkHashKey);
   }, []);
+
+  const handleUpdateGhToken = (val: string) => {
+    setGithubToken(val);
+    setTokenTestResult(null);
+    try {
+      localStorage.setItem(GH_TOKEN_KEY, val.trim());
+    } catch {}
+  };
+
+  const handleToggleAutoCommit = (checked: boolean) => {
+    setAutoCommitGithub(checked);
+    try {
+      localStorage.setItem(GH_AUTOCOMMIT_KEY, checked ? "true" : "false");
+    } catch {}
+  };
+
+  const handleTestToken = async () => {
+    setIsTestingToken(true);
+    setTokenTestResult(null);
+    const res = await testGitHubToken(githubToken);
+    setTokenTestResult(res);
+    setIsTestingToken(false);
+  };
 
   const handleManualLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -721,6 +778,59 @@ export default function AdminPage() {
     setIsBroadcasting(false);
     setLastBroadcastTime(now);
     setLastBroadcastSig(signedPayload.signature.substring(0, 16) + "...");
+
+    // Auto-commit automatique dans nantes.json sur GitHub si configuré
+    if (autoCommitGithub && githubToken.trim() && routeCoordinates.length >= 2) {
+      setIsSyncingGithub(true);
+      setGithubSyncResult(null);
+      try {
+        const syncRes = await syncRouteToNantesJson({
+          token: githubToken.trim(),
+          routeCoordinates,
+          headCoords,
+          tailCoords,
+        });
+        setGithubSyncResult(syncRes);
+      } catch (err: any) {
+        setGithubSyncResult({
+          success: false,
+          error: err.message || "Erreur de synchronisation GitHub",
+        });
+      } finally {
+        setIsSyncingGithub(false);
+      }
+    }
+  };
+
+  // Pousser manuellement le tracé actuel dans nantes.json sur GitHub
+  const handleManualSyncGitHub = async () => {
+    if (!githubToken.trim()) {
+      alert("Veuillez renseigner un Token GitHub (PAT) dans la section 5 ci-dessous.");
+      return;
+    }
+    if (routeCoordinates.length < 2) {
+      alert("Placez au moins 2 points et cliquez sur 'Recalculer le tracé sur la voirie' avant de pousser sur GitHub.");
+      return;
+    }
+
+    setIsSyncingGithub(true);
+    setGithubSyncResult(null);
+    try {
+      const syncRes = await syncRouteToNantesJson({
+        token: githubToken.trim(),
+        routeCoordinates,
+        headCoords,
+        tailCoords,
+      });
+      setGithubSyncResult(syncRes);
+    } catch (err: any) {
+      setGithubSyncResult({
+        success: false,
+        error: err.message || "Erreur de synchronisation GitHub",
+      });
+    } finally {
+      setIsSyncingGithub(false);
+    }
   };
 
   // Formulaire d'authentification par clé privée si non authentifié
@@ -812,11 +922,11 @@ export default function AdminPage() {
 
         <button
           onClick={handleBroadcastSignedState}
-          disabled={isBroadcasting}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-colors active:scale-95"
+          disabled={isBroadcasting || isSyncingGithub}
+          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-colors active:scale-95 disabled:opacity-60"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isBroadcasting ? "animate-spin" : ""}`} />
-          Signer &amp; Diffuser en Direct
+          <RefreshCw className={`w-3.5 h-3.5 ${isBroadcasting || isSyncingGithub ? "animate-spin" : ""}`} />
+          {isSyncingGithub ? "Auto-Commit GitHub..." : isBroadcasting ? "Diffusion..." : "Signer & Diffuser en Direct"}
         </button>
       </header>
 
@@ -1007,6 +1117,16 @@ export default function AdminPage() {
               </button>
 
               <button
+                onClick={handleManualSyncGitHub}
+                disabled={isSyncingGithub || routeCoordinates.length < 2}
+                className="w-full py-2 px-3 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
+                title="Pousser immédiatement dans src/config/cities/nantes.json sur GitHub et déclencher le build GitHub Pages"
+              >
+                <GitCommit className={`w-3.5 h-3.5 ${isSyncingGithub ? "animate-spin" : ""}`} />
+                {isSyncingGithub ? "Mise à jour GitHub en cours..." : "Pousser dans nantes.json sur GitHub"}
+              </button>
+
+              <button
                 onClick={handleCopyGeoJsonCoordinates}
                 className="w-full py-1.5 px-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
                 title="Copier les coordonnées pour mise à jour permanente dans nantes.json"
@@ -1023,6 +1143,131 @@ export default function AdminPage() {
                 Rétablir le tracé déclaré initial
               </button>
             </div>
+          </div>
+
+          {/* 5. Synchronisation Automatique GitHub (nantes.json) */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                <GitCommit className="w-3.5 h-3.5 text-purple-400" /> 5. Auto-Commit GitHub (nantes.json)
+              </span>
+              {githubToken ? (
+                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-mono flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Configuré
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-[9px] text-zinc-400 font-mono">
+                  Non configuré
+                </span>
+              )}
+            </div>
+
+            <p className="text-[11px] text-zinc-400 leading-snug">
+              Met à jour automatiquement <code className="text-cyan-400 font-mono">nantes.json</code> sur GitHub dès la diffusion pour que l&apos;itinéraire persiste pour tous les manifestants qui rechargent l&apos;application.
+            </p>
+
+            {/* Champ Token GitHub */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="gh-token-input" className="text-[11px] font-medium text-zinc-400">
+                  Token GitHub (PAT avec accès contents:write)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowToken(!showToken)}
+                  className="text-zinc-500 hover:text-zinc-300 p-0.5"
+                  title={showToken ? "Masquer" : "Afficher"}
+                >
+                  {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  id="gh-token-input"
+                  type={showToken ? "text" : "password"}
+                  value={githubToken}
+                  onChange={(e) => handleUpdateGhToken(e.target.value)}
+                  placeholder="github_pat_... ou ghp_..."
+                  className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400 font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Bouton de test du token */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleTestToken}
+                disabled={isTestingToken || !githubToken.trim()}
+                className="py-1 px-2.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-[11px] font-semibold rounded-lg border border-zinc-700 transition-colors flex items-center gap-1"
+              >
+                <RefreshCw className={`w-3 h-3 ${isTestingToken ? "animate-spin" : ""}`} />
+                Tester la connexion
+              </button>
+
+              {tokenTestResult && (
+                <span className={`text-[10px] font-mono flex items-center gap-1 ${tokenTestResult.valid ? "text-emerald-400" : "text-red-400"}`}>
+                  {tokenTestResult.valid ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3" /> Token valide
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-3 h-3" /> {tokenTestResult.error || "Invalide"}
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
+
+            {/* Case à cocher auto-commit */}
+            <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-zinc-800 text-[11px] text-zinc-300 select-none">
+              <input
+                type="checkbox"
+                checked={autoCommitGithub}
+                onChange={(e) => handleToggleAutoCommit(e.target.checked)}
+                className="w-3.5 h-3.5 rounded bg-black border-zinc-700 text-purple-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+              />
+              <span>Auto-commit GitHub à chaque clic sur &laquo; Signer &amp; Diffuser &raquo;</span>
+            </label>
+
+            {/* Statut du dernier commit */}
+            {githubSyncResult && (
+              <div className={`p-2.5 rounded-xl border text-[11px] font-mono ${githubSyncResult.success ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-300" : "bg-red-950/40 border-red-500/30 text-red-300"}`}>
+                {githubSyncResult.success ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold font-sans">
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      nantes.json mis à jour sur GitHub !
+                    </div>
+                    <div className="text-[10px] text-zinc-400 flex items-center justify-between">
+                      <span>Commit: {githubSyncResult.commitSha}</span>
+                      {githubSyncResult.commitUrl && (
+                        <a
+                          href={githubSyncResult.commitUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-400 hover:underline flex items-center gap-0.5"
+                        >
+                          Voir sur GitHub <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-[9px] text-emerald-400/80 font-sans">
+                      🚀 Déploiement automatique GitHub Pages lancé.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold font-sans block">Échec de mise à jour GitHub</span>
+                      <span className="text-[10px] text-red-400/80 break-all">{githubSyncResult.error}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Info signature */}
