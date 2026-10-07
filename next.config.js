@@ -1,6 +1,4 @@
-import type { NextConfig } from "next";
-
-// Détecte si le build est exécuté pour GitHub Pages
+/** @type {import('next').NextConfig} */
 const isGitHubPages =
   process.env.GITHUB_PAGES === "true" ||
   process.env.GITHUB_ACTIONS === "true" ||
@@ -25,7 +23,7 @@ const cspHeader = `
   .replace(/\s{2,}/g, " ")
   .trim();
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   basePath: basePath || undefined,
@@ -76,4 +74,4 @@ const nextConfig: NextConfig = {
       }),
 };
 
-export default nextConfig;
+module.exports = nextConfig;
