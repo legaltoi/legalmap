@@ -6,7 +6,8 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { ActionDock } from "@/components/ActionDock";
 import { LegalSheet } from "@/components/LegalSheet";
 import { LegalNotice } from "@/components/LegalNotice";
-import { SocialFeedModal, SocialFeedTriggerButton } from "@/components/feed/SocialFeedModal";
+import { SocialFeedModal } from "@/components/feed/SocialFeedModal";
+import { Toolbar } from "@/components/layout/Toolbar";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
 import { CortegeState, ReportCategory } from "@/types";
@@ -161,9 +162,12 @@ export default function HomePage() {
         />
       </div>
 
-      {/* 3. Bouton d'action flottant tactile : Flux Live #ManifNantes */}
+      {/* 3. Toolbar d'action tactile : Flux Live #ManifNantes */}
       <div className="fixed right-3 bottom-44 sm:bottom-40 z-20 pointer-events-auto">
-        <SocialFeedTriggerButton onClick={() => setIsSocialFeedOpen(true)} />
+        <Toolbar
+          onToggleSocialFeed={() => setIsSocialFeedOpen((prev) => !prev)}
+          isSocialFeedOpen={isSocialFeedOpen}
+        />
       </div>
 
       {/* 4. Barre d'action rapide tactile (4 boutons légaux normalisés) */}

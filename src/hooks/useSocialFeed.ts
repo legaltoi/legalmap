@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchSocialFeed,
   SocialPost,
-  OFFICIAL_X_LIVE_URL,
 } from "@/services/socialFeedService";
 
 interface UseSocialFeedOptions {
   query?: string;
-  autoRefreshInterval?: number; // en ms (0 pour désactiver le rafraîchissement auto)
+  autoRefreshInterval?: number; // ms (ex: 60000 = 1 min)
   initialFetch?: boolean;
 }
 
@@ -19,12 +18,14 @@ export interface UseSocialFeedState {
   isRefreshing: boolean;
   error: string | null;
   lastUpdated: Date | null;
-  isConfigured: boolean;
-  officialUrl: string;
+  isFallback: boolean;
+  cooldownLeft: number; // secondes restantes avant de pouvoir rafraîchir à nouveau (anti-spam 10s)
 }
 
+const RATE_LIMIT_COOLDOWN_SECONDS = 10;
+
 export function useSocialFeed({
-  query = "Nantes manif",
+  query = "Manif Nantes OR #ManifNantes",
   autoRefreshInterval = 60000,
   initialFetch = true,
 }: UseSocialFeedOptions = {}) {
@@ -34,15 +35,37 @@ export function useSocialFeed({
     isRefreshing: false,
     error: null,
     lastUpdated: null,
-    isConfigured: false,
-    officialUrl: OFFICIAL_X_LIVE_URL,
+    isFallback: false,
+    cooldownLeft: 0,
   });
 
   const isMountedRef = useRef(true);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Décompte de temporisation anti-spam (10s)
+  const startCooldown = useCallback(() => {
+    setState((prev) => ({ ...prev, cooldownLeft: RATE_LIMIT_COOLDOWN_SECONDS }));
+
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+
+    cooldownTimerRef.current = setInterval(() => {
+      setState((prev) => {
+        if (prev.cooldownLeft <= 1) {
+          if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+          return { ...prev, cooldownLeft: 0 };
+        }
+        return { ...prev, cooldownLeft: prev.cooldownLeft - 1 };
+      });
+    }, 1000);
+  }, []);
 
   const loadFeed = useCallback(
     async (isManualRefresh = false) => {
       if (!isMountedRef.current) return;
+
+      if (isManualRefresh && state.cooldownLeft > 0) {
+        return; // Protection rate-limit actif
+      }
 
       setState((prev) => ({
         ...prev,
@@ -52,19 +75,23 @@ export function useSocialFeed({
       }));
 
       try {
-        const { posts, isConfigured, officialUrl } = await fetchSocialFeed(query);
+        const { posts, isFallback } = await fetchSocialFeed(query);
 
         if (!isMountedRef.current) return;
 
-        setState({
+        setState((prev) => ({
+          ...prev,
           posts,
           isLoading: false,
           isRefreshing: false,
           error: null,
           lastUpdated: new Date(),
-          isConfigured,
-          officialUrl,
-        });
+          isFallback,
+        }));
+
+        if (isManualRefresh) {
+          startCooldown();
+        }
       } catch (err: any) {
         if (!isMountedRef.current) return;
 
@@ -72,13 +99,11 @@ export function useSocialFeed({
           ...prev,
           isLoading: false,
           isRefreshing: false,
-          error:
-            err?.message ||
-            "Erreur lors de la récupération des données réseau.",
+          error: err?.message || "Impossible de charger le flux en direct.",
         }));
       }
     },
-    [query]
+    [query, state.cooldownLeft, startCooldown]
   );
 
   useEffect(() => {
@@ -98,6 +123,7 @@ export function useSocialFeed({
     return () => {
       isMountedRef.current = false;
       if (intervalId) clearInterval(intervalId);
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
     };
   }, [loadFeed, autoRefreshInterval, initialFetch]);
 

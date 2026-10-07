@@ -6,8 +6,6 @@ import {
   RefreshCw,
   ExternalLink,
   Radio,
-  Copy,
-  Check,
   AlertTriangle,
   Heart,
   Repeat2,
@@ -15,19 +13,15 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   Clock,
-  Smartphone,
-  Globe,
+  Minimize2,
+  Maximize2,
+  ShieldCheck,
   Share2,
+  Check,
+  Copy,
 } from "lucide-react";
 import { useSocialFeed } from "@/hooks/useSocialFeed";
-import {
-  OFFICIAL_X_LIVE_URL,
-  OFFICIAL_X_MEDIA_URL,
-  OFFICIAL_X_HASHTAG_URL,
-  OFFICIAL_X_APP_DEEP_LINK,
-  SocialPost,
-  formatRelativeTime,
-} from "@/services/socialFeedService";
+import { SocialPost, formatRelativeTime, OFFICIAL_X_SEARCH_URL } from "@/services/socialFeedService";
 
 interface SocialFeedModalProps {
   isOpen: boolean;
@@ -35,17 +29,40 @@ interface SocialFeedModalProps {
 }
 
 export function SocialFeedModal({ isOpen, onClose }: SocialFeedModalProps) {
-  const { posts, isLoading, isRefreshing, error, lastUpdated, isConfigured, refetch } =
-    useSocialFeed({ query: "Nantes manif", autoRefreshInterval: 60000 });
+  const { posts, isLoading, isRefreshing, error, lastUpdated, isFallback, cooldownLeft, refetch } =
+    useSocialFeed({ query: "Manif Nantes OR #ManifNantes", autoRefreshInterval: 60000 });
 
-  const [hasCopiedUrl, setHasCopiedUrl] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleCopyUrl = (url: string) => {
+  const handleCopyLink = (post: SocialPost, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      setHasCopiedUrl(true);
-      setTimeout(() => setHasCopiedUrl(false), 2000);
+      navigator.clipboard.writeText(post.url);
+      setCopiedId(post.id);
+      setTimeout(() => setCopiedId(null), 2000);
     }
+  };
+
+  const renderFormattedContent = (content: string) => {
+    const tokens = content.split(/(\s+)/);
+    return tokens.map((token, i) => {
+      if (token.startsWith("#")) {
+        return (
+          <span key={i} className="text-cyan-400 font-semibold hover:underline">
+            {token}
+          </span>
+        );
+      }
+      if (token.startsWith("@")) {
+        return (
+          <span key={i} className="text-blue-400 font-medium hover:underline">
+            {token}
+          </span>
+        );
+      }
+      return <span key={i}>{token}</span>;
+    });
   };
 
   if (!isOpen) return null;
@@ -55,329 +72,277 @@ export function SocialFeedModal({ isOpen, onClose }: SocialFeedModalProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="social-feed-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={onClose}
+      className={`fixed z-50 transition-all duration-300 ${
+        // Sur Mobile (<768px): Bottom Sheet / Drawer collapsible max 60vh
+        // Sur Desktop (>=768px): Floating right-side panel w-96 max-h-[80vh]
+        "inset-x-0 bottom-0 md:inset-auto md:right-4 md:bottom-24 md:w-96"
+      }`}
+      onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="w-full sm:max-w-2xl max-h-[92dvh] sm:max-h-[85vh] bg-[#09090b] border-t sm:border border-zinc-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden text-zinc-100 select-text"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}
-        onClick={(e) => e.stopPropagation()}
+        className={`w-full bg-[#000000] border-t md:border border-slate-800 rounded-t-3xl md:rounded-3xl shadow-2xl backdrop-blur-xl flex flex-col overflow-hidden text-zinc-100 transition-all ${
+          isMinimized
+            ? "max-h-16"
+            : "max-h-[60vh] md:max-h-[80vh]"
+        }`}
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 12px)" }}
       >
-        {/* Poignée tactile mobile */}
-        <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
+        {/* Poignée tactile mobile (Min 44px tap target) */}
+        <div
+          onClick={() => setIsMinimized(!isMinimized)}
+          className="md:hidden w-full flex items-center justify-center pt-2.5 pb-1 cursor-pointer min-h-[44px]"
+        >
           <div className="w-12 h-1.5 bg-zinc-700/80 rounded-full" />
         </div>
 
-        {/* En-tête OLED */}
-        <header className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800/80 bg-[#121216]">
-          <div className="flex items-center gap-3">
-            <div className="relative p-2 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-400 flex items-center justify-center">
-              <Radio className="w-5 h-5 animate-pulse text-rose-400" />
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-              </span>
+        {/* En-tête OLED (Slate-800 borders) */}
+        <header className="flex items-center justify-between px-4 py-3 border-b border-slate-800/90 bg-[#070709]">
+          <div className="flex items-center gap-2.5">
+            <div className="relative p-1.5 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-400 flex items-center justify-center">
+              <Radio className="w-4 h-4 animate-pulse text-rose-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 id="social-feed-title" className="text-base font-extrabold text-white tracking-tight">
-                  Flux Live X — Nantes Manif
+              <div className="flex items-center gap-1.5">
+                <h2 id="social-feed-title" className="text-xs font-black text-white tracking-wider uppercase">
+                  Live #ManifNantes
                 </h2>
-                <span className="hidden xs:inline-block px-2 py-0.5 bg-rose-950/60 border border-rose-500/30 text-rose-300 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase">
-                  f=live
+                <span className="px-1.5 py-0.5 bg-rose-950/60 border border-rose-500/30 text-rose-300 rounded text-[9px] font-mono font-bold">
+                  LCEN 6-III-2
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5 font-mono truncate max-w-xs sm:max-w-md">
-                <span>x.com/search?q=Nantes manif&amp;f=live</span>
+              <p className="text-[10px] text-zinc-400 font-mono">
+                {lastUpdated
+                  ? `Sync ${lastUpdated.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+                  : "Lecture seule en direct"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
+            {/* Bouton Rafraîchir avec rate-limit protection 10s */}
             <button
               onClick={() => refetch()}
-              disabled={isRefreshing}
-              className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-              title="Rafraîchir"
-              aria-label="Rafraîchir"
+              disabled={isRefreshing || cooldownLeft > 0}
+              className="px-2 py-1.5 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-slate-800 rounded-xl transition-all active:scale-95 disabled:opacity-50 min-h-[36px] min-w-[36px] flex items-center justify-center gap-1 text-[10px] font-mono"
+              title={cooldownLeft > 0 ? `Attendez ${cooldownLeft}s avant de rafraîchir` : "Rafraîchir le flux (anti-spam 10s)"}
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-cyan-400" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-cyan-400" : ""}`} />
+              {cooldownLeft > 0 && <span className="text-amber-400 font-bold">{cooldownLeft}s</span>}
             </button>
 
+            {/* Bouton Réduire / Agrandir (Desktop) */}
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="hidden md:flex p-1.5 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-slate-800 rounded-xl transition-colors min-h-[36px] min-w-[36px] items-center justify-center"
+              title={isMinimized ? "Agrandir le panneau" : "Réduire le panneau"}
+            >
+              {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Bouton Fermer */}
             <button
               onClick={onClose}
-              aria-label="Fermer"
-              className="p-2 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-colors"
+              aria-label="Fermer le flux live"
+              className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-slate-800 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        {/* Corps du modal */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 scrollbar-thin scrollbar-thumb-zinc-700">
-          {/* Module 1 : Carte d'accès réseau direct vers x.com/search */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-zinc-900 via-[#101014] to-black border border-zinc-700/80 rounded-3xl p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-bold font-mono tracking-wide uppercase">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-                  Flux Réseau Réel
-                </span>
-                <h3 className="text-base font-black text-white mt-2">
-                  Dépêches &amp; Vidéos en direct sur X
-                </h3>
-                <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
-                  Accédez directement aux publications et vidéos diffusées en temps réel à Nantes, sans intermédiaire ni filtrage.
-                </p>
-              </div>
-            </div>
-
-            {/* Bouton d'action principal 1-clic */}
-            <div className="mt-4 pt-4 border-t border-zinc-800 flex flex-col sm:flex-row gap-2.5">
-              <a
-                href={OFFICIAL_X_LIVE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-3 px-4 bg-white hover:bg-zinc-200 active:scale-[0.99] text-black font-extrabold text-xs rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                <Globe className="w-4 h-4 text-black" />
-                <span>Ouvrir x.com/search (Flux en direct)</span>
-                <ExternalLink className="w-3.5 h-3.5 text-black" />
-              </a>
-
-              <a
-                href={OFFICIAL_X_APP_DEEP_LINK}
-                className="py-3 px-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 active:scale-[0.99] text-zinc-200 hover:text-white font-bold text-xs rounded-2xl transition-all flex items-center justify-center gap-2"
-                title="Ouvrir directement dans l'application mobile X"
-              >
-                <Smartphone className="w-4 h-4 text-cyan-400" />
-                <span className="hidden sm:inline">Ouvrir dans l&apos;App X</span>
-                <span className="sm:hidden">App X</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Module 2 : Raccourcis de recherche ciblés tirés directement de x.com */}
-          <div className="space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 px-1 font-mono">
-              Filtres Réseau Disponibles (100 % Réels)
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {/* Raccourci 1 : En direct */}
-              <a
-                href={OFFICIAL_X_LIVE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 bg-[#111115] hover:bg-[#16161c] border border-zinc-800 rounded-2xl flex items-center justify-between group transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 group-hover:bg-rose-500/20 transition-colors">
-                    <Radio className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">
-                      Nantes manif — En direct
-                    </div>
-                    <div className="text-[10px] text-zinc-500 font-mono">
-                      f=live • Chronologique strict
-                    </div>
-                  </div>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
-              </a>
-
-              {/* Raccourci 2 : Médias / Vidéos */}
-              <a
-                href={OFFICIAL_X_MEDIA_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 bg-[#111115] hover:bg-[#16161c] border border-zinc-800 rounded-2xl flex items-center justify-between group transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400 group-hover:bg-cyan-500/20 transition-colors">
-                    <VideoIcon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
-                      Photos &amp; Vidéos de terrain
-                    </div>
-                    <div className="text-[10px] text-zinc-500 font-mono">
-                      f=media • Visuels seuls
-                    </div>
-                  </div>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
-              </a>
-
-              {/* Raccourci 3 : #ManifNantes */}
-              <a
-                href={OFFICIAL_X_HASHTAG_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 bg-[#111115] hover:bg-[#16161c] border border-zinc-800 rounded-2xl flex items-center justify-between group transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-                    <span className="font-mono font-black text-xs">#</span>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
-                      Hashtag #ManifNantes
-                    </div>
-                    <div className="text-[10px] text-zinc-500 font-mono">
-                      Fil officiel du mot-dièse
-                    </div>
-                  </div>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
-              </a>
-
-              {/* Raccourci 4 : Copier l'URL officielle */}
-              <button
-                onClick={() => handleCopyUrl(OFFICIAL_X_LIVE_URL)}
-                className="p-3 bg-[#111115] hover:bg-[#16161c] border border-zinc-800 rounded-2xl flex items-center justify-between text-left group transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
-                    <Share2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
-                      {hasCopiedUrl ? "Lien officiel copié !" : "Partager le lien X direct"}
-                    </div>
-                    <div className="text-[10px] text-zinc-500 font-mono">
-                      Presse-papier sécurisé
-                    </div>
-                  </div>
-                </div>
-                {hasCopiedUrl ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Module 3 : Affichage des publications réelles (si fournies par un point d'accès réseau réel) */}
-          {posts.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 px-1 font-mono">
-                Messages Récupérés du Réseau ({posts.length})
-              </h4>
-
-              {posts.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-[#101014] hover:bg-[#141419] border border-zinc-800 rounded-2xl p-4 transition-all shadow-md group"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      {post.authorAvatar ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={post.authorAvatar}
-                          alt={post.authorName}
-                          className="w-9 h-9 rounded-full object-cover border border-zinc-700"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white uppercase font-mono">
-                          {post.authorName.slice(0, 2)}
+        {/* Corps du flux si non réduit */}
+        {!isMinimized && (
+          <>
+            {/* Zone de contenu déroulante */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 scrollbar-thin scrollbar-thumb-zinc-800">
+              {/* 1. SKELETON LOADER */}
+              {isLoading && (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((n) => (
+                    <div
+                      key={n}
+                      className="bg-zinc-900/60 border border-slate-800 rounded-2xl p-3.5 animate-pulse space-y-2.5"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-zinc-800 rounded-full" />
+                        <div className="space-y-1 flex-1">
+                          <div className="w-24 h-3 bg-zinc-800 rounded" />
+                          <div className="w-14 h-2 bg-zinc-800/70 rounded" />
                         </div>
-                      )}
+                      </div>
+                      <div className="w-full h-2.5 bg-zinc-800/80 rounded" />
+                      <div className="w-3/4 h-2.5 bg-zinc-800/70 rounded" />
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                      <div className="leading-tight">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-bold text-white">{post.authorName}</span>
-                          {post.authorVerified && (
-                            <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                          )}
+              {/* 2. ERROR STATE */}
+              {!isLoading && error && (
+                <div className="p-3.5 bg-rose-950/40 border border-rose-500/40 rounded-2xl text-rose-200 text-xs flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                  <button
+                    onClick={() => refetch()}
+                    disabled={cooldownLeft > 0}
+                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold rounded-xl text-[11px] shrink-0 min-h-[36px]"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
+
+              {/* 3. EMPTY STATE */}
+              {!isLoading && !error && posts.length === 0 && (
+                <div className="py-8 text-center text-zinc-500">
+                  <Radio className="w-7 h-7 mx-auto mb-2 opacity-30 text-zinc-400" />
+                  <p className="text-xs font-semibold text-zinc-400">Aucune publication récente détectée.</p>
+                  <a
+                    href={OFFICIAL_X_SEARCH_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-cyan-400 font-bold hover:underline mt-2"
+                  >
+                    <span>Consulter directement sur X</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
+              {/* 4. POSTS LIST (READ-ONLY) */}
+              {!isLoading &&
+                posts.map((post) => (
+                  <article
+                    key={post.id}
+                    className="bg-[#09090c] hover:bg-[#0d0d12] border border-slate-800 rounded-2xl p-3.5 transition-all shadow-md group"
+                  >
+                    {/* Header post */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {post.authorAvatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={post.authorAvatar}
+                            alt={post.authorName}
+                            className="w-8 h-8 rounded-full object-cover border border-zinc-800"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-bold text-white uppercase font-mono">
+                            {post.authorName.slice(0, 2)}
+                          </div>
+                        )}
+
+                        <div className="leading-tight">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                              {post.authorName}
+                            </span>
+                            {post.authorVerified && (
+                              <BadgeCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            )}
+                          </div>
+                          <span className="text-[10px] text-zinc-400 font-mono">
+                            @{post.authorHandle}
+                          </span>
                         </div>
-                        <span className="text-[11px] text-zinc-400 font-mono">
-                          @{post.authorHandle}
-                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono shrink-0">
+                        <Clock className="w-3 h-3 text-zinc-500" />
+                        <span>{formatRelativeTime(post.timestamp)}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] text-zinc-500 font-mono shrink-0">
-                      <Clock className="w-3 h-3 text-zinc-500" />
-                      <span>{formatRelativeTime(post.timestamp)}</span>
+                    {/* Contenu textuel */}
+                    <p className="mt-2 text-xs text-zinc-200 leading-relaxed font-sans select-text">
+                      {renderFormattedContent(post.content)}
+                    </p>
+
+                    {/* Média attaché (sans proxying / stockage binaire) */}
+                    {post.mediaUrl && (
+                      <div className="mt-2.5 relative rounded-xl overflow-hidden border border-slate-800 bg-black aspect-video max-h-48 flex items-center justify-center group/media">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={post.mediaUrl}
+                          alt="Média d'illustration"
+                          className="w-full h-full object-cover group-hover/media:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        {post.mediaType === "video" && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="p-2.5 bg-rose-600/90 rounded-full text-white shadow-xl flex items-center justify-center">
+                              <VideoIcon className="w-4 h-4 fill-current" />
+                            </div>
+                          </div>
+                        )}
+                        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 rounded text-[9px] font-mono text-zinc-300 border border-zinc-700/60">
+                          {post.mediaType === "video" ? "Vidéo" : "Image"}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Actions & Liens externes originaux */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-zinc-400 text-[10px]">
+                      <div className="flex items-center gap-3 font-mono text-zinc-400">
+                        {typeof post.retweetsCount === "number" && (
+                          <span className="flex items-center gap-1">
+                            <Repeat2 className="w-3 h-3 text-zinc-500" />
+                            <span>{post.retweetsCount}</span>
+                          </span>
+                        )}
+                        {typeof post.likesCount === "number" && (
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3 h-3 text-zinc-500" />
+                            <span>{post.likesCount}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={(e) => handleCopyLink(post, e)}
+                          className="p-1 hover:text-white hover:bg-zinc-800 rounded transition-colors flex items-center gap-1 min-h-[36px]"
+                          title="Copier le lien"
+                        >
+                          {copiedId === post.id ? (
+                            <Check className="w-3 h-3 text-emerald-400" />
+                          ) : (
+                            <Copy className="w-3 h-3 text-zinc-400" />
+                          )}
+                        </button>
+
+                        <a
+                          href={post.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded-lg font-bold text-[10px] transition-colors min-h-[36px]"
+                          title="Voir sur le site officiel de l'hébergeur"
+                        >
+                          <span>Voir sur X</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
                     </div>
-                  </div>
-
-                  <p className="mt-2.5 text-xs text-zinc-200 leading-relaxed font-sans select-text whitespace-pre-wrap">
-                    {post.content}
-                  </p>
-
-                  {post.mediaUrl && (
-                    <div className="mt-3 relative rounded-xl overflow-hidden border border-zinc-800 bg-black aspect-video max-h-64 flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.mediaUrl}
-                        alt="Média X"
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-
-                  <div className="mt-3 pt-2.5 border-t border-zinc-800/60 flex items-center justify-end">
-                    <a
-                      href={post.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded-lg font-bold text-[10px] transition-colors"
-                    >
-                      <span>Voir sur X</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))}
             </div>
-          )}
 
-          {/* Information d'intégrité réseau */}
-          <div className="p-3 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl text-[11px] text-zinc-400 leading-relaxed">
-            <span className="font-semibold text-zinc-300">Intégrité des données : </span>
-            Afin de respecter la stricte exactitude de l&apos;information et les conditions d&apos;utilisation, LEGALMAPS ne génère aucune donnée artificielle. La consultation s&apos;effectue directement sur la requête temps réel de la plateforme X.
-          </div>
-        </div>
-
-        {/* Pied de page */}
-        <footer className="px-5 py-2.5 bg-[#0a0a0d] border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
-          <span className="truncate">Réf : https://x.com/search?q=Nantes manif&amp;f=live</span>
-          <span className="font-mono text-[10px] text-zinc-600 shrink-0">100% Réseau</span>
-        </footer>
+            {/* Pied de page avec Disclaimer Légal LCEN Art. 6-III-2 obligatoire */}
+            <footer className="px-3.5 py-2.5 bg-[#050507] border-t border-slate-800 text-[10px] text-zinc-400 leading-tight">
+              <div className="flex items-center gap-1.5 font-semibold text-zinc-300 mb-0.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span>Disclaimer Légal (LCEN Art. 6-III-2)</span>
+              </div>
+              <p className="text-[10px] text-zinc-400">
+                Flux d&apos;information public non modéré, responsabilité de l&apos;hébergeur d&apos;origine. Lecture seule, 0 collecte, 0 cookie.
+              </p>
+            </footer>
+          </>
+        )}
       </div>
     </div>
-  );
-}
-
-/**
- * Bouton d'action flottant tactile pour ouvrir le flux live officiel depuis la carte
- */
-export function SocialFeedTriggerButton({
-  onClick,
-}: {
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="group relative flex items-center gap-2 px-3 py-2 bg-black/90 hover:bg-zinc-900 active:scale-95 border border-rose-500/40 hover:border-rose-400 rounded-2xl text-rose-300 shadow-2xl backdrop-blur-xl transition-all touch-manipulation min-h-[44px]"
-      title="Ouvrir le flux en direct X #ManifNantes"
-      aria-label="Flux direct X #ManifNantes"
-    >
-      <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-      </span>
-      <Radio className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
-      <span className="text-xs font-black tracking-wide text-white">Live X #ManifNantes</span>
-    </button>
   );
 }
