@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchSocialFeed,
   SocialPost,
-  FeedState,
+  OFFICIAL_X_LIVE_URL,
 } from "@/services/socialFeedService";
 
 interface UseSocialFeedOptions {
@@ -13,18 +13,29 @@ interface UseSocialFeedOptions {
   initialFetch?: boolean;
 }
 
+export interface UseSocialFeedState {
+  posts: SocialPost[];
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
+  isConfigured: boolean;
+  officialUrl: string;
+}
+
 export function useSocialFeed({
-  query,
+  query = "Nantes manif",
   autoRefreshInterval = 60000,
   initialFetch = true,
 }: UseSocialFeedOptions = {}) {
-  const [state, setState] = useState<FeedState>({
+  const [state, setState] = useState<UseSocialFeedState>({
     posts: [],
     isLoading: initialFetch,
     isRefreshing: false,
     error: null,
     lastUpdated: null,
-    isFallback: false,
+    isConfigured: false,
+    officialUrl: OFFICIAL_X_LIVE_URL,
   });
 
   const isMountedRef = useRef(true);
@@ -41,7 +52,7 @@ export function useSocialFeed({
       }));
 
       try {
-        const { posts, isFallback } = await fetchSocialFeed(query);
+        const { posts, isConfigured, officialUrl } = await fetchSocialFeed(query);
 
         if (!isMountedRef.current) return;
 
@@ -51,7 +62,8 @@ export function useSocialFeed({
           isRefreshing: false,
           error: null,
           lastUpdated: new Date(),
-          isFallback,
+          isConfigured,
+          officialUrl,
         });
       } catch (err: any) {
         if (!isMountedRef.current) return;
@@ -62,14 +74,13 @@ export function useSocialFeed({
           isRefreshing: false,
           error:
             err?.message ||
-            "Impossible de charger les derniers messages. Veuillez réessayer.",
+            "Erreur lors de la récupération des données réseau.",
         }));
       }
     },
     [query]
   );
 
-  // Chargement initial et gestion de l'intervalle de rafraîchissement automatique
   useEffect(() => {
     isMountedRef.current = true;
 

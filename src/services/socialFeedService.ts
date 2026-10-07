@@ -1,8 +1,24 @@
 /**
- * Service de récupération du flux social X / Twitter (#ManifNantes)
- * Compatible Next.js 15 export statique pur (côté client).
- * Conforme au RGPD : zéro cookie, zéro tracking, aucune donnée personnelle stockée.
+ * Service de liaison avec le flux réel X / Twitter (#ManifNantes)
+ * Référé exclusivement et directement à la page réseau :
+ * https://x.com/search?q=Nantes%20manif&src=typed_query&f=live
+ *
+ * RÈGLE STRICTE : ZÉRO DONNÉE INVENTÉE OU FABRIQUÉE.
+ * Tout contenu affiché provient directement du réseau ou renvoie de manière transparente
+ * vers le flux en direct sur la plateforme X officielle.
  */
+
+export const OFFICIAL_X_LIVE_URL =
+  "https://x.com/search?q=Nantes%20manif&src=typed_query&f=live";
+
+export const OFFICIAL_X_MEDIA_URL =
+  "https://x.com/search?q=Nantes%20manif&src=typed_query&f=media";
+
+export const OFFICIAL_X_HASHTAG_URL =
+  "https://x.com/search?q=%23ManifNantes&src=typed_query&f=live";
+
+export const OFFICIAL_X_APP_DEEP_LINK =
+  "twitter://search?query=Nantes%20manif";
 
 export interface SocialPost {
   id: string;
@@ -18,137 +34,30 @@ export interface SocialPost {
   mediaType?: "image" | "video";
   likesCount?: number;
   retweetsCount?: number;
-  source?: "live_api" | "mock_fallback";
+  source: "live_api";
 }
 
-export interface FeedState {
+export interface FeedFetchResult {
   posts: SocialPost[];
-  isLoading: boolean;
-  isRefreshing: boolean;
-  error: string | null;
-  lastUpdated: Date | null;
-  isFallback: boolean;
-}
-
-const DEFAULT_QUERY = "Manif Nantes OR #ManifNantes";
-
-/**
- * Génération de données de secours réalistes et fraîches (calquées sur le moment présent)
- * Garantit que l'interface reste toujours active et fonctionnelle même hors-ligne ou sans clé d'API.
- */
-function getRealisticMockPosts(): SocialPost[] {
-  const now = Date.now();
-
-  return [
-    {
-      id: "mock-post-1",
-      authorName: "Nantes Live Report",
-      authorHandle: "nantes_live",
-      authorVerified: true,
-      content:
-        "La tête de cortège arrive actuellement sur la Place Royale. Forte affluence cet après-midi, ambiance calme et déterminée. #ManifNantes #Nantes",
-      createdAt: new Date(now - 3 * 60 * 1000).toISOString(),
-      timestamp: now - 3 * 60 * 1000,
-      url: "https://x.com/search?q=%23ManifNantes",
-      mediaUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80",
-      mediaType: "image",
-      likesCount: 142,
-      retweetsCount: 38,
-      source: "mock_fallback",
-    },
-    {
-      id: "mock-post-2",
-      authorName: "Street Medics Nantes",
-      authorHandle: "MedicsNantes",
-      authorVerified: true,
-      content:
-        "Rappel : plusieurs points d'eau potable et sérum phy sont accessibles sur le Cours des 50 Otages et près du CHU Hôtel-Dieu. Restez hydratés et attentifs aux personnes vulnérables. #ManifNantes",
-      createdAt: new Date(now - 11 * 60 * 1000).toISOString(),
-      timestamp: now - 11 * 60 * 1000,
-      url: "https://x.com/search?q=%23ManifNantes",
-      likesCount: 230,
-      retweetsCount: 95,
-      source: "mock_fallback",
-    },
-    {
-      id: "mock-post-3",
-      authorName: "Presse Océan Direct",
-      authorHandle: "presseocean",
-      authorVerified: true,
-      content:
-        "Circulation Naolib : le réseau tramway (Lignes 1, 2 et 3) est temporairement interrompu dans le secteur Commerce. Itinéraire dévié vers Bouffay. #ManifNantes #InfoTrafic",
-      createdAt: new Date(now - 22 * 60 * 1000).toISOString(),
-      timestamp: now - 22 * 60 * 1000,
-      url: "https://x.com/search?q=%23ManifNantes",
-      mediaUrl: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80",
-      mediaType: "image",
-      likesCount: 88,
-      retweetsCount: 42,
-      source: "mock_fallback",
-    },
-    {
-      id: "mock-post-4",
-      authorName: "Union Syndicale 44",
-      authorHandle: "in_syndicale44",
-      authorVerified: false,
-      content:
-        "Départ officiel du cortège intersyndical depuis la Place du Miroir d'Eau / Château. Des milliers de personnes réunies pour la défense des droits sociaux. #ManifNantes #Nantes",
-      createdAt: new Date(now - 38 * 60 * 1000).toISOString(),
-      timestamp: now - 38 * 60 * 1000,
-      url: "https://x.com/search?q=%23ManifNantes",
-      likesCount: 312,
-      retweetsCount: 124,
-      source: "mock_fallback",
-    },
-    {
-      id: "mock-post-5",
-      authorName: "Observatoire Droit Manif",
-      authorHandle: "obs_droits_44",
-      authorVerified: true,
-      content:
-        "La permanence du Barreau des avocats de Nantes est joignable pour assistance juridique en cas de garde à vue ou contrôle d'identité abusif. Numéro d'urgence disponible sur LEGALMAPS. #ManifNantes",
-      createdAt: new Date(now - 55 * 60 * 1000).toISOString(),
-      timestamp: now - 55 * 60 * 1000,
-      url: "https://x.com/search?q=%23ManifNantes",
-      likesCount: 184,
-      retweetsCount: 79,
-      source: "mock_fallback",
-    },
-    {
-      id: "mock-post-6",
-      authorName: "Nantes Révoltée",
-      authorHandle: "NantesRevoltee",
-      authorVerified: false,
-      content:
-        "Vidéo en direct : Défilé dynamique rue Crébillon en direction de la place Graslin. Ambiance musicale et banderoles citoyennes. #ManifNantes #Nantes",
-      createdAt: new Date(now - 74 * 60 * 1000).toISOString(),
-      timestamp: now - 74 * 60 * 1000,
-      url: "https://x.com/search?q=%23ManifNantes",
-      mediaUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80",
-      mediaType: "video",
-      likesCount: 420,
-      retweetsCount: 153,
-      source: "mock_fallback",
-    },
-  ];
+  isConfigured: boolean;
+  officialUrl: string;
 }
 
 /**
- * Récupération asynchrone des derniers posts sur X / Twitter
- * Tente d'appeler l'API configurée (via NEXT_PUBLIC_SOCIAL_FEED_API_URL),
- * et bascule de manière résiliente sur les données simulées fraîches en cas d'échec ou d'absence de configuration.
+ * Récupération stricte depuis le réseau via API / proxy configuré.
+ * En l'absence d'API ou si aucun post réel n'est renvoyé par le réseau,
+ * AUCUNE donnée fictive n'est inventée : la liste reste vide et le composant
+ * redirige directement vers la page en direct officielle.
  */
-export async function fetchSocialFeed(query = DEFAULT_QUERY): Promise<{
-  posts: SocialPost[];
-  isFallback: boolean;
-}> {
+export async function fetchSocialFeed(query = "Nantes manif"): Promise<FeedFetchResult> {
   const apiUrl = process.env.NEXT_PUBLIC_SOCIAL_FEED_API_URL;
 
   if (apiUrl) {
     try {
       const url = new URL(apiUrl);
       url.searchParams.set("q", query);
-      url.searchParams.set("count", "20");
+      url.searchParams.set("f", "live");
+      url.searchParams.set("count", "30");
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -165,44 +74,46 @@ export async function fetchSocialFeed(query = DEFAULT_QUERY): Promise<{
 
         if (Array.isArray(rawPosts) && rawPosts.length > 0) {
           const parsedPosts: SocialPost[] = rawPosts.map((p: any, idx: number) => ({
-            id: p.id || `remote-${idx}-${Date.now()}`,
-            authorName: p.authorName || p.user?.name || "Participant",
-            authorHandle: p.authorHandle || p.user?.screen_name || "anonyme",
+            id: p.id || `x-${idx}-${p.timestamp || Date.now()}`,
+            authorName: p.authorName || p.user?.name || "Auteur X",
+            authorHandle: p.authorHandle || p.user?.screen_name || "x",
             authorAvatar: p.authorAvatar || p.user?.profile_image_url_https,
             authorVerified: Boolean(p.authorVerified || p.user?.verified),
             content: p.content || p.text || "",
             createdAt: p.createdAt || p.created_at || new Date().toISOString(),
             timestamp: p.timestamp || (p.created_at ? new Date(p.created_at).getTime() : Date.now()),
-            url: p.url || `https://x.com/search?q=%23ManifNantes`,
+            url: p.url || `https://x.com/${p.authorHandle || p.user?.screen_name || "i"}/status/${p.id}`,
             mediaUrl: p.mediaUrl || p.entities?.media?.[0]?.media_url_https,
             mediaType: p.mediaType || (p.entities?.media?.[0]?.type === "video" ? "video" : "image"),
-            likesCount: p.likesCount || p.favorite_count,
-            retweetsCount: p.retweetsCount || p.retweet_count,
+            likesCount: typeof p.likesCount === "number" ? p.likesCount : p.favorite_count,
+            retweetsCount: typeof p.retweetsCount === "number" ? p.retweetsCount : p.retweet_count,
             source: "live_api",
           }));
 
-          // Tri chronologique décroissant (du plus récent au plus ancien)
           parsedPosts.sort((a, b) => b.timestamp - a.timestamp);
 
-          return { posts: parsedPosts, isFallback: false };
+          return {
+            posts: parsedPosts,
+            isConfigured: true,
+            officialUrl: OFFICIAL_X_LIVE_URL,
+          };
         }
       }
     } catch (err) {
-      console.warn(
-        "[SocialFeed] Échec de l'appel API distant (hors-ligne ou CORS). Bascule sur les données simulées :",
-        err
-      );
+      console.warn("[SocialFeed] Erreur lors de l'appel au point d'accès réseau :", err);
     }
   }
 
-  // Fallback résilient avec simulation dynamique fraîche
-  const mockPosts = getRealisticMockPosts();
-  mockPosts.sort((a, b) => b.timestamp - a.timestamp);
-  return { posts: mockPosts, isFallback: true };
+  // ZÉRO MOCK : aucun post inventé
+  return {
+    posts: [],
+    isConfigured: Boolean(apiUrl),
+    officialUrl: OFFICIAL_X_LIVE_URL,
+  };
 }
 
 /**
- * Formatage relatif convivial en français (ex: "il y a 5 min", "il y a 1h")
+ * Formatage relatif convivial en français (ex: "Il y a 5 min", "Il y a 1 h")
  */
 export function formatRelativeTime(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
