@@ -2,13 +2,22 @@
   "id": "nantes",
   "name": "Nantes",
   "region": "Loire-Atlantique (44)",
-  "center": [-1.5536, 47.2173],
+  "center": [
+    -1.5536,
+    47.2173
+  ],
   "defaultZoom": 14.5,
   "minZoom": 11,
   "maxZoom": 18,
   "bounds": [
-    [-1.63, 47.17],
-    [-1.48, 47.26]
+    [
+      -1.63,
+      47.17
+    ],
+    [
+      -1.48,
+      47.26
+    ]
   ],
   "officialRoute": {
     "type": "FeatureCollection",
@@ -23,16 +32,398 @@
         "geometry": {
           "type": "LineString",
           "coordinates": [
-            [-1.5583, 47.2132],
-            [-1.5562, 47.2144],
-            [-1.5537, 47.2155],
-            [-1.5568, 47.2176],
-            [-1.5582, 47.2195],
-            [-1.5561, 47.2208],
-            [-1.5539, 47.2212],
-            [-1.5521, 47.2185],
-            [-1.5512, 47.2158],
-            [-1.5488, 47.2152]
+            [
+              -1.555449,
+              47.214228
+            ],
+            [
+              -1.555429,
+              47.214206
+            ],
+            [
+              -1.555319,
+              47.214096
+            ],
+            [
+              -1.555303,
+              47.21408
+            ],
+            [
+              -1.555207,
+              47.213996
+            ],
+            [
+              -1.555174,
+              47.213965
+            ],
+            [
+              -1.555133,
+              47.213938
+            ],
+            [
+              -1.555105,
+              47.213914
+            ],
+            [
+              -1.555072,
+              47.213885
+            ],
+            [
+              -1.555032,
+              47.213841
+            ],
+            [
+              -1.555008,
+              47.213821
+            ],
+            [
+              -1.5549,
+              47.213724
+            ],
+            [
+              -1.554761,
+              47.213656
+            ],
+            [
+              -1.554734,
+              47.213626
+            ],
+            [
+              -1.554486,
+              47.213338
+            ],
+            [
+              -1.55445,
+              47.213296
+            ],
+            [
+              -1.554367,
+              47.213202
+            ],
+            [
+              -1.554199,
+              47.213007
+            ],
+            [
+              -1.554177,
+              47.212984
+            ],
+            [
+              -1.55413,
+              47.212948
+            ],
+            [
+              -1.554092,
+              47.212921
+            ],
+            [
+              -1.554047,
+              47.2129
+            ],
+            [
+              -1.553921,
+              47.212845
+            ],
+            [
+              -1.553843,
+              47.212813
+            ],
+            [
+              -1.553799,
+              47.212784
+            ],
+            [
+              -1.553802,
+              47.212772
+            ],
+            [
+              -1.553802,
+              47.212759
+            ],
+            [
+              -1.5538,
+              47.212747
+            ],
+            [
+              -1.553793,
+              47.21273
+            ],
+            [
+              -1.553781,
+              47.212714
+            ],
+            [
+              -1.553765,
+              47.212699
+            ],
+            [
+              -1.553746,
+              47.212687
+            ],
+            [
+              -1.553723,
+              47.212678
+            ],
+            [
+              -1.553705,
+              47.212673
+            ],
+            [
+              -1.553687,
+              47.21267
+            ],
+            [
+              -1.553668,
+              47.212668
+            ],
+            [
+              -1.553648,
+              47.212668
+            ],
+            [
+              -1.553629,
+              47.21267
+            ],
+            [
+              -1.553611,
+              47.212674
+            ],
+            [
+              -1.553593,
+              47.21268
+            ],
+            [
+              -1.553577,
+              47.212687
+            ],
+            [
+              -1.553559,
+              47.212697
+            ],
+            [
+              -1.55355,
+              47.212704
+            ],
+            [
+              -1.553541,
+              47.212714
+            ],
+            [
+              -1.553532,
+              47.212724
+            ],
+            [
+              -1.553526,
+              47.212735
+            ],
+            [
+              -1.553522,
+              47.212746
+            ],
+            [
+              -1.55352,
+              47.212758
+            ],
+            [
+              -1.553479,
+              47.212803
+            ],
+            [
+              -1.553415,
+              47.212844
+            ],
+            [
+              -1.55336,
+              47.212882
+            ],
+            [
+              -1.553311,
+              47.212924
+            ],
+            [
+              -1.553121,
+              47.213
+            ],
+            [
+              -1.55271,
+              47.213153
+            ],
+            [
+              -1.552617,
+              47.213172
+            ],
+            [
+              -1.55256,
+              47.213183
+            ],
+            [
+              -1.552504,
+              47.213195
+            ],
+            [
+              -1.55248,
+              47.213192
+            ],
+            [
+              -1.552459,
+              47.213192
+            ],
+            [
+              -1.552435,
+              47.213194
+            ],
+            [
+              -1.552406,
+              47.213201
+            ],
+            [
+              -1.552372,
+              47.213212
+            ],
+            [
+              -1.552335,
+              47.21323
+            ],
+            [
+              -1.552308,
+              47.213251
+            ],
+            [
+              -1.55229,
+              47.213277
+            ],
+            [
+              -1.552289,
+              47.213285
+            ],
+            [
+              -1.552288,
+              47.213292
+            ],
+            [
+              -1.552288,
+              47.2133
+            ],
+            [
+              -1.552205,
+              47.213349
+            ],
+            [
+              -1.552181,
+              47.213355
+            ],
+            [
+              -1.552115,
+              47.21337
+            ],
+            [
+              -1.552064,
+              47.213385
+            ],
+            [
+              -1.552015,
+              47.2134
+            ],
+            [
+              -1.551827,
+              47.213474
+            ],
+            [
+              -1.551202,
+              47.213743
+            ],
+            [
+              -1.550799,
+              47.213916
+            ],
+            [
+              -1.550651,
+              47.213976
+            ],
+            [
+              -1.550517,
+              47.214041
+            ],
+            [
+              -1.550356,
+              47.214144
+            ],
+            [
+              -1.550259,
+              47.214201
+            ],
+            [
+              -1.550225,
+              47.214231
+            ],
+            [
+              -1.550205,
+              47.21426
+            ],
+            [
+              -1.550156,
+              47.21432
+            ],
+            [
+              -1.550143,
+              47.214335
+            ],
+            [
+              -1.550103,
+              47.214336
+            ],
+            [
+              -1.550065,
+              47.214344
+            ],
+            [
+              -1.550031,
+              47.214358
+            ],
+            [
+              -1.550003,
+              47.214377
+            ],
+            [
+              -1.549983,
+              47.214401
+            ],
+            [
+              -1.549942,
+              47.214404
+            ],
+            [
+              -1.549882,
+              47.21441
+            ],
+            [
+              -1.549884,
+              47.214485
+            ],
+            [
+              -1.549883,
+              47.214524
+            ],
+            [
+              -1.54984,
+              47.214583
+            ],
+            [
+              -1.549696,
+              47.214757
+            ],
+            [
+              -1.549676,
+              47.21478
+            ],
+            [
+              -1.54942,
+              47.21509
+            ],
+            [
+              -1.54907,
+              47.215161
+            ]
           ]
         }
       },
@@ -45,7 +436,10 @@
         },
         "geometry": {
           "type": "Point",
-          "coordinates": [-1.5583, 47.2132]
+          "coordinates": [
+            -1.556,
+            47.214
+          ]
         }
       },
       {
@@ -57,7 +451,10 @@
         },
         "geometry": {
           "type": "Point",
-          "coordinates": [-1.5582, 47.2195]
+          "coordinates": [
+            -1.5582,
+            47.2195
+          ]
         }
       },
       {
@@ -69,7 +466,10 @@
         },
         "geometry": {
           "type": "Point",
-          "coordinates": [-1.5488, 47.2152]
+          "coordinates": [
+            -1.549,
+            47.215
+          ]
         }
       }
     ]
@@ -79,7 +479,10 @@
       "id": "chu-hotel-dieu",
       "name": "CHU Hôtel-Dieu (Urgences Adultes & Traumato)",
       "category": "HOSPITAL",
-      "coordinates": [-1.5515, 47.2114],
+      "coordinates": [
+        -1.5515,
+        47.2114
+      ],
       "address": "1 Place Alexis-Ricordeau, 44093 Nantes",
       "phone": "02 40 08 33 33",
       "emergencyInfo": "Accès urgences 24h/24 par le quai Moncousu. Permanence médico-légale et UMJ."
@@ -88,7 +491,10 @@
       "id": "urgences-ophtalmo-chu",
       "name": "Urgences Ophtalmologiques CHU Nantes",
       "category": "HOSPITAL",
-      "coordinates": [-1.5522, 47.2118],
+      "coordinates": [
+        -1.5522,
+        47.2118
+      ],
       "address": "1 Place Alexis-Ricordeau (Bât. Jean Monnet), 44093 Nantes",
       "phone": "02 40 08 35 35",
       "emergencyInfo": "Spécialisé traumatologie oculaire, brûlures chimiques et projection lacrymogène sévère."
@@ -97,7 +503,10 @@
       "id": "clinique-breteche",
       "name": "Clinique Bretéché",
       "category": "HOSPITAL",
-      "coordinates": [-1.5458, 47.2241],
+      "coordinates": [
+        -1.5458,
+        47.2241
+      ],
       "address": "3 Rue de la Béraudière, 44000 Nantes",
       "phone": "02 51 86 86 86",
       "emergencyInfo": "Soins non programmés en journée : plaies, sutures et traumatologie légère."
@@ -106,7 +515,10 @@
       "id": "sos-medecins-nantes",
       "name": "SOS Médecins Nantes (Centre de Consultation)",
       "category": "HOSPITAL",
-      "coordinates": [-1.5385, 47.214],
+      "coordinates": [
+        -1.5385,
+        47.214
+      ],
       "address": "17 Quai Magellan, 44000 Nantes",
       "phone": "02 40 50 30 30",
       "emergencyInfo": "Consultations médicales d'urgence 7j/7 sans rendez-vous pour blessures sans pronostic vital."
@@ -115,7 +527,10 @@
       "id": "samu-44",
       "name": "SAMU 44 / Centre 15",
       "category": "HOSPITAL",
-      "coordinates": [-1.551, 47.2105],
+      "coordinates": [
+        -1.551,
+        47.2105
+      ],
       "address": "CHU Nantes (Quai Moncousu), 44000 Nantes",
       "phone": "15",
       "emergencyInfo": "Numéro d'urgence médicale vitale absolue (accessible même sans crédit téléphonique)."
@@ -124,7 +539,10 @@
       "id": "pharmacie-royale",
       "name": "Pharmacie Royale de Paris (Garde / 24h)",
       "category": "PHARMACY",
-      "coordinates": [-1.5588, 47.2151],
+      "coordinates": [
+        -1.5588,
+        47.2151
+      ],
       "address": "1 Place Royale, 44000 Nantes",
       "phone": "02 40 48 64 22",
       "emergencyInfo": "Pharmacie centrale accessible depuis le parcours. Sérum physiologique stérile, compresses et pansements."
@@ -133,7 +551,10 @@
       "id": "pharmacie-commerce",
       "name": "Pharmacie du Commerce",
       "category": "PHARMACY",
-      "coordinates": [-1.5574, 47.2137],
+      "coordinates": [
+        -1.5574,
+        47.2137
+      ],
       "address": "15 Place du Commerce, 44000 Nantes",
       "phone": "02 40 48 50 15",
       "emergencyInfo": "Premier secours pharmaceutique au cœur du pôle transports Commerce."
@@ -142,7 +563,10 @@
       "id": "pharmacie-bretagne",
       "name": "Pharmacie de Bretagne",
       "category": "PHARMACY",
-      "coordinates": [-1.5583, 47.2198],
+      "coordinates": [
+        -1.5583,
+        47.2198
+      ],
       "address": "2 Place de Bretagne, 44000 Nantes",
       "phone": "02 40 48 42 16",
       "emergencyInfo": "Au pied de la Tour Bretagne, accès direct depuis le carrefour de rassemblement."
@@ -151,7 +575,10 @@
       "id": "pharmacie-lafayette-marne",
       "name": "Pharmacie Lafayette de la Marne",
       "category": "PHARMACY",
-      "coordinates": [-1.5555, 47.2158],
+      "coordinates": [
+        -1.5555,
+        47.2158
+      ],
       "address": "20 Rue de la Marne, 44000 Nantes",
       "phone": "02 40 47 72 32",
       "emergencyInfo": "Grande pharmacie de centre-ville, stocks importants de matériel de premier secours."
@@ -160,7 +587,10 @@
       "id": "pharmacie-feydeau",
       "name": "Pharmacie Feydeau",
       "category": "PHARMACY",
-      "coordinates": [-1.5546, 47.2139],
+      "coordinates": [
+        -1.5546,
+        47.2139
+      ],
       "address": "3 Allée Duguay Trouin (Cours 50 Otages), 44000 Nantes",
       "phone": "02 40 47 18 10",
       "emergencyInfo": "Accessible directement depuis l'axe central Feydeau / 50 Otages."
@@ -169,7 +599,10 @@
       "id": "pharmacie-bourse",
       "name": "Pharmacie de la Bourse",
       "category": "PHARMACY",
-      "coordinates": [-1.5604, 47.213],
+      "coordinates": [
+        -1.5604,
+        47.213
+      ],
       "address": "8 Place de la Bourse, 44000 Nantes",
       "phone": "02 40 48 54 98",
       "emergencyInfo": "Proche médiathèque Jacques Demy et quai de la Fosse."
@@ -178,7 +611,10 @@
       "id": "pharmacie-gare-nord",
       "name": "Pharmacie de la Gare (Nantes Nord)",
       "category": "PHARMACY",
-      "coordinates": [-1.5428, 47.2175],
+      "coordinates": [
+        -1.5428,
+        47.2175
+      ],
       "address": "35 Boulevard de Stalingrad (face Gare Nord), 44000 Nantes",
       "phone": "02 40 74 13 41",
       "emergencyInfo": "Zone de repli et de dispersion face à la gare ferroviaire."
@@ -187,7 +623,10 @@
       "id": "pharmacie-saint-nicolas",
       "name": "Pharmacie Saint-Nicolas",
       "category": "PHARMACY",
-      "coordinates": [-1.557, 47.2163],
+      "coordinates": [
+        -1.557,
+        47.2163
+      ],
       "address": "5 Rue Affre (face Basilique Saint-Nicolas), 44000 Nantes",
       "phone": "02 40 48 44 26",
       "emergencyInfo": "Proche de la Place Royale et de la Rue du Calvaire."
@@ -196,7 +635,10 @@
       "id": "fontaine-miroir",
       "name": "Point d'Eau Potable - Miroir d'Eau",
       "category": "WATER",
-      "coordinates": [-1.5492, 47.2155],
+      "coordinates": [
+        -1.5492,
+        47.2155
+      ],
       "address": "Esplanade du Miroir d'Eau (face Château), 44000 Nantes",
       "emergencyInfo": "Borne fontaine d'eau potable municipale en continu - rinçage oculaire d'urgence et réhydratation."
     },
@@ -204,7 +646,10 @@
       "id": "fontaine-bouffay",
       "name": "Point d'Eau Potable - Place du Bouffay",
       "category": "WATER",
-      "coordinates": [-1.5529, 47.2156],
+      "coordinates": [
+        -1.5529,
+        47.2156
+      ],
       "address": "Place du Bouffay (angle Rue des Petites Écuries), 44000 Nantes",
       "emergencyInfo": "Borne fontaine municipale d'eau potable active."
     },
@@ -212,7 +657,10 @@
       "id": "fontaine-mercoeur",
       "name": "Point d'Eau Potable - Square Élisa-Mercœur",
       "category": "WATER",
-      "coordinates": [-1.5485, 47.2131],
+      "coordinates": [
+        -1.5485,
+        47.2131
+      ],
       "address": "Square Mercœur (proche station tramway), 44000 Nantes",
       "emergencyInfo": "Robinet d'eau potable public disponible."
     },
@@ -220,7 +668,10 @@
       "id": "fontaine-wallace-cambronne",
       "name": "Fontaine Wallace - Cours Cambronne",
       "category": "WATER",
-      "coordinates": [-1.5627, 47.2128],
+      "coordinates": [
+        -1.5627,
+        47.2128
+      ],
       "address": "Cours Cambronne (proche Place Graslin), 44000 Nantes",
       "emergencyInfo": "Fontaine Wallace en fonte verte, eau potable courante continue."
     },
@@ -228,7 +679,10 @@
       "id": "fontaine-wallace-bourse",
       "name": "Fontaine Wallace - Place de la Bourse",
       "category": "WATER",
-      "coordinates": [-1.5595, 47.2134],
+      "coordinates": [
+        -1.5595,
+        47.2134
+      ],
       "address": "Place de la Bourse (face Fnac), 44000 Nantes",
       "emergencyInfo": "Fontaine Wallace historique en accès libre."
     },
@@ -236,7 +690,10 @@
       "id": "fontaine-fleuriot",
       "name": "Point d'Eau Potable - Square Fleuriot de Langle",
       "category": "WATER",
-      "coordinates": [-1.5552, 47.215],
+      "coordinates": [
+        -1.5552,
+        47.215
+      ],
       "address": "Angle Rue de la Barillerie & Cours des 50 Otages, 44000 Nantes",
       "emergencyInfo": "Borne d'eau potable municipale sur l'axe central."
     },
@@ -244,7 +701,10 @@
       "id": "fontaine-viarme",
       "name": "Point d'Eau Potable - Place Viarme",
       "category": "WATER",
-      "coordinates": [-1.5618, 47.2225],
+      "coordinates": [
+        -1.5618,
+        47.2225
+      ],
       "address": "Place Viarme (côté halle), 44000 Nantes",
       "emergencyInfo": "Borne d'eau potable publique en accès libre."
     },
@@ -252,7 +712,10 @@
       "id": "fontaine-gare-nord",
       "name": "Point d'Eau Potable - Parvis Gare Nord",
       "category": "WATER",
-      "coordinates": [-1.5435, 47.2185],
+      "coordinates": [
+        -1.5435,
+        47.2185
+      ],
       "address": "Boulevard de Stalingrad (parvis gare nord), 44000 Nantes",
       "emergencyInfo": "Borne fontaine publique extérieure près du Jardin des Plantes."
     },
@@ -260,7 +723,10 @@
       "id": "fontaine-versailles",
       "name": "Point d'Eau Potable - Île de Versailles",
       "category": "WATER",
-      "coordinates": [-1.554, 47.2255],
+      "coordinates": [
+        -1.554,
+        47.2255
+      ],
       "address": "Quai de Versailles (proche passerelle Erdre), 44000 Nantes",
       "emergencyInfo": "Point d'eau potable public le long des berges de l'Erdre."
     },
@@ -268,7 +734,10 @@
       "id": "fontaine-cirque",
       "name": "Point d'Eau Potable - Place du Cirque",
       "category": "WATER",
-      "coordinates": [-1.5556, 47.2173],
+      "coordinates": [
+        -1.5556,
+        47.2173
+      ],
       "address": "Cours des 50 Otages (station Cirque), 44000 Nantes",
       "emergencyInfo": "Borne fontaine municipale sur le terre-plein central."
     },
@@ -276,7 +745,10 @@
       "id": "barreau-nantes-palais",
       "name": "Maison de l'Avocat (Barreau de Nantes)",
       "category": "EMERGENCY",
-      "coordinates": [-1.5649, 47.2081],
+      "coordinates": [
+        -1.5649,
+        47.2081
+      ],
       "address": "25 Rue La Noue Bras de Fer (Palais de Justice), 44200 Nantes",
       "phone": "02 40 20 48 40",
       "emergencyInfo": "Permanence des gardes à vue, commis d'office pénal et assistance juridique immédiate."
@@ -285,7 +757,10 @@
       "id": "ldh-bourse-travail",
       "name": "Ligue des Droits de l'Homme (LDH Nantes)",
       "category": "EMERGENCY",
-      "coordinates": [-1.568, 47.205],
+      "coordinates": [
+        -1.568,
+        47.205
+      ],
       "address": "Bourse du Travail, 9 Place de la Gare de l'État, 44200 Nantes",
       "phone": "02 51 84 03 55",
       "emergencyInfo": "Observatoire des libertés publiques et signalement des violences policières."
@@ -294,7 +769,10 @@
       "id": "cite-judiciaire-droits",
       "name": "Cité Judiciaire (Défenseurs des Droits)",
       "category": "EMERGENCY",
-      "coordinates": [-1.564, 47.2078],
+      "coordinates": [
+        -1.564,
+        47.2078
+      ],
       "address": "19 Quai François Mitterrand, 44200 Nantes",
       "emergencyInfo": "Accueil juridique d'urgence et protection des droits fondamentaux."
     },
@@ -302,7 +780,10 @@
       "id": "toilette-commerce",
       "name": "Toilettes Publiques - Place du Commerce",
       "category": "TOILET",
-      "coordinates": [-1.5586, 47.213],
+      "coordinates": [
+        -1.5586,
+        47.213
+      ],
       "address": "Place du Commerce (allée Brancas), 44000 Nantes",
       "emergencyInfo": "Sanisette automatique gratuite 24h/24, accessible PMR."
     },
@@ -310,7 +791,10 @@
       "id": "toilette-bretagne",
       "name": "Toilettes Publiques - Place de Bretagne",
       "category": "TOILET",
-      "coordinates": [-1.5585, 47.2192],
+      "coordinates": [
+        -1.5585,
+        47.2192
+      ],
       "address": "Place de Bretagne (côté Poste), 44000 Nantes",
       "emergencyInfo": "Sanisette automatique autonettoyante gratuite."
     },
@@ -318,7 +802,10 @@
       "id": "toilette-miroir",
       "name": "Toilettes Publiques - Miroir d'Eau / Château",
       "category": "TOILET",
-      "coordinates": [-1.5496, 47.2152],
+      "coordinates": [
+        -1.5496,
+        47.2152
+      ],
       "address": "Esplanade du Miroir d'Eau, 44000 Nantes",
       "emergencyInfo": "Bloc sanitaire public gratuit."
     },
@@ -326,7 +813,10 @@
       "id": "toilette-petite-hollande",
       "name": "Toilettes Publiques - Place Petite Hollande",
       "category": "TOILET",
-      "coordinates": [-1.5608, 47.2115],
+      "coordinates": [
+        -1.5608,
+        47.2115
+      ],
       "address": "Place de la Petite Hollande (quai de la Fosse), 44000 Nantes",
       "emergencyInfo": "Sanisette municipale gratuite 24h/24."
     },
@@ -334,7 +824,10 @@
       "id": "toilette-mercoeur",
       "name": "Toilettes Publiques - Square Mercœur",
       "category": "TOILET",
-      "coordinates": [-1.5482, 47.2133],
+      "coordinates": [
+        -1.5482,
+        47.2133
+      ],
       "address": "Square Mercœur (allée du Port Maillard), 44000 Nantes",
       "emergencyInfo": "Sanisette publique gratuite."
     },
@@ -342,7 +835,10 @@
       "id": "toilette-pommeraye",
       "name": "Toilettes Publiques - Graslin / Pommeraye",
       "category": "TOILET",
-      "coordinates": [-1.5605, 47.214],
+      "coordinates": [
+        -1.5605,
+        47.214
+      ],
       "address": "Rue Crébillon (près passage Pommeraye), 44000 Nantes",
       "emergencyInfo": "Sanisette publique gratuite."
     },
@@ -350,10 +846,12 @@
       "id": "toilette-gare-nord",
       "name": "Toilettes Publiques - Gare Nord",
       "category": "TOILET",
-      "coordinates": [-1.5425, 47.2172],
+      "coordinates": [
+        -1.5425,
+        47.2172
+      ],
       "address": "Boulevard de Stalingrad (parvis gare nord), 44000 Nantes",
       "emergencyInfo": "Sanisette automatique accessible PMR."
     }
   ]
 }
-
