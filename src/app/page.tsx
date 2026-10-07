@@ -25,6 +25,8 @@ const MapView = dynamic(
   }
 );
 
+const PUBLIC_CORTEGE_STORAGE_KEY = "legalmaps_public_cortege_state";
+
 export default function HomePage() {
   // État officiel du cortège (par défaut MOBILE au démarrage)
   const [cortegeState, setCortegeState] = useState<CortegeState>({
@@ -33,6 +35,20 @@ export default function HomePage() {
     tail: null,
     updatedAt: Date.now(),
   });
+
+  // Réhydratation locale de l'état officiel du cortège si reçu récemment (< 6h)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(PUBLIC_CORTEGE_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && typeof saved === "object" && Date.now() - (saved.updatedAt || 0) < 6 * 3600 * 1000) {
+          setCortegeState(saved);
+        }
+      }
+    } catch {}
+  }, []);
 
   // Position GPS locale de l'utilisateur (zéro transmission réseau brute)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -60,6 +76,11 @@ export default function HomePage() {
     },
     onCortegeStateReceived: (state) => {
       setCortegeState(state);
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(PUBLIC_CORTEGE_STORAGE_KEY, JSON.stringify(state));
+        }
+      } catch {}
     },
   });
 

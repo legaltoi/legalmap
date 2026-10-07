@@ -70,6 +70,9 @@ export function MapView({
   const [isLocating, setIsLocating] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
+  const cortegeStateRef = useRef(cortegeState);
+  cortegeStateRef.current = cortegeState;
+
   // Détection du chemin de base pour GitHub Pages
   const basePath =
     typeof window !== "undefined" && window.location.pathname.startsWith("/legalmap")
@@ -253,12 +256,39 @@ export function MapView({
       setMapLoaded(true);
       triggerResize();
 
-      // 1. Ajout de la source du parcours officiel GeoJSON de Nantes
+      // 1. Ajout de la source du parcours officiel GeoJSON de Nantes (ou tracé dynamique actualisé)
+      const dynamicRoute = cortegeStateRef.current?.routeCoordinates;
+      const initialRouteData =
+        dynamicRoute && dynamicRoute.length >= 2
+          ? {
+              type: "FeatureCollection",
+              features: [
+                {
+                  type: "Feature",
+                  properties: {
+                    name: "Parcours Officiel Actualisé",
+                    description: "Itinéraire dynamique recalculé sur la voirie",
+                    type: "route",
+                  },
+                  geometry: {
+                    type: "LineString",
+                    coordinates: dynamicRoute,
+                  },
+                },
+              ],
+            }
+          : (nantesData.officialRoute as any);
+
       if (!map.getSource("official-route-source")) {
         map.addSource("official-route-source", {
           type: "geojson",
-          data: nantesData.officialRoute as any,
+          data: initialRouteData,
         });
+      } else {
+        const routeSource = map.getSource("official-route-source") as maplibregl.GeoJSONSource | undefined;
+        if (routeSource) {
+          routeSource.setData(initialRouteData);
+        }
       }
 
       // Lueur d'arrière-plan du tracé (Halo Cyan)

@@ -48,6 +48,7 @@ import {
   Plus,
   RotateCcw,
   Navigation,
+  Copy,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -69,6 +70,7 @@ export default function AdminPage() {
   const [waypoints, setWaypoints] = useState<RouteWaypoint[]>([]);
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+  const [hasCopiedGeoJson, setHasCopiedGeoJson] = useState(false);
 
   // Mode de placement sur carte ('head' | 'tail' | 'waypoint' | null)
   const [placementMode, setPlacementMode] = useState<"head" | "tail" | "waypoint" | null>(null);
@@ -82,6 +84,70 @@ export default function AdminPage() {
   const tailMarkerRef = useRef<maplibregl.Marker | null>(null);
   const waypointMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
 
+  // Référence synchronisée du tracé pour accès synchrone dans les callbacks de carte
+  const routeCoordinatesRef = useRef<[number, number][]>([]);
+  routeCoordinatesRef.current = routeCoordinates;
+  const isHydratedRef = useRef(false);
+  const ADMIN_STORAGE_KEY = "legalmaps_admin_cortege_draft";
+
+  // 1. Récupération du brouillon organisateur depuis localStorage au montage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved) {
+          if (saved.cortegeStatus === "MOBILE" || saved.cortegeStatus === "IMMOBILE") {
+            setCortegeStatus(saved.cortegeStatus);
+          }
+          if (saved.headCoords && typeof saved.headCoords.lat === "number") {
+            setHeadCoords(saved.headCoords);
+          }
+          if (saved.tailCoords && typeof saved.tailCoords.lat === "number") {
+            setTailCoords(saved.tailCoords);
+          }
+          if (Array.isArray(saved.waypoints)) {
+            setWaypoints(saved.waypoints);
+          }
+          if (Array.isArray(saved.routeCoordinates) && saved.routeCoordinates.length >= 2) {
+            setRouteCoordinates(saved.routeCoordinates);
+            routeCoordinatesRef.current = saved.routeCoordinates;
+          }
+          if (saved.lastBroadcastTime) {
+            setLastBroadcastTime(saved.lastBroadcastTime);
+          }
+          if (saved.lastBroadcastSig) {
+            setLastBroadcastSig(saved.lastBroadcastSig);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[LegalMaps Admin] Erreur lors de la lecture du brouillon local:", e);
+    } finally {
+      isHydratedRef.current = true;
+    }
+  }, []);
+
+  // 2. Persistance automatique dans localStorage à chaque modification
+  useEffect(() => {
+    if (!isHydratedRef.current || typeof window === "undefined") return;
+    try {
+      const draft = {
+        cortegeStatus,
+        headCoords,
+        tailCoords,
+        waypoints,
+        routeCoordinates,
+        lastBroadcastTime,
+        lastBroadcastSig,
+      };
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(draft));
+    } catch (e) {
+      console.warn("[LegalMaps Admin] Erreur lors de la sauvegarde du brouillon local:", e);
+    }
+  }, [cortegeStatus, headCoords, tailCoords, waypoints, routeCoordinates, lastBroadcastTime, lastBroadcastSig]);
+
   const { status: realtimeStatus, sendSignedCortegeState } = useRealtime({
     onCortegeStateReceived: (state) => {
       setCortegeStatus(state.status);
@@ -89,6 +155,7 @@ export default function AdminPage() {
       if (state.tail) setTailCoords({ lat: state.tail.lat, lng: state.tail.lng });
       if (state.routeCoordinates && state.routeCoordinates.length >= 2) {
         setRouteCoordinates(state.routeCoordinates);
+        routeCoordinatesRef.current = state.routeCoordinates;
         if (mapRef.current) {
           const source = mapRef.current.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
           if (source) {
@@ -321,11 +388,47 @@ export default function AdminPage() {
 
     const attachAdminRoute = () => {
       triggerResize();
+
+      let activeCoords = routeCoordinatesRef.current;
+      if (!activeCoords || activeCoords.length < 2) {
+        try {
+          const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+          if (raw) {
+            const saved = JSON.parse(raw);
+            if (Array.isArray(saved?.routeCoordinates) && saved.routeCoordinates.length >= 2) {
+              activeCoords = saved.routeCoordinates;
+            }
+          }
+        } catch {}
+      }
+
+      const activeGeoJson =
+        activeCoords && activeCoords.length >= 2
+          ? {
+              type: "FeatureCollection",
+              features: [
+                {
+                  type: "Feature",
+                  properties: { name: "Parcours Actualisé", type: "route" },
+                  geometry: {
+                    type: "LineString",
+                    coordinates: activeCoords,
+                  },
+                },
+              ],
+            }
+          : (nantesData.officialRoute as any);
+
       if (!map.getSource("official-route")) {
         map.addSource("official-route", {
           type: "geojson",
-          data: nantesData.officialRoute as any,
+          data: activeGeoJson,
         });
+      } else {
+        const source = map.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
+        if (source) {
+          source.setData(activeGeoJson);
+        }
       }
 
       if (!map.getLayer("route-line")) {
@@ -502,6 +605,7 @@ export default function AdminPage() {
       try {
         const calculatedCoords = await fetchWalkingRoute(orderedPoints);
         setRouteCoordinates(calculatedCoords);
+        routeCoordinatesRef.current = calculatedCoords;
 
         // Mise à jour visuelle sur la carte d'administration
         if (mapRef.current) {
@@ -531,15 +635,63 @@ export default function AdminPage() {
     setIsCalculatingRoute(false);
   };
 
+  // Synchronisation dynamique de la couche tracé si routeCoordinates change (ex: réhydratation)
+  useEffect(() => {
+    routeCoordinatesRef.current = routeCoordinates;
+    if (!mapRef.current) return;
+    const source = mapRef.current.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
+    if (source) {
+      if (routeCoordinates && routeCoordinates.length >= 2) {
+        source.setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              properties: { name: "Parcours Actualisé", type: "route" },
+              geometry: {
+                type: "LineString",
+                coordinates: routeCoordinates,
+              },
+            },
+          ],
+        });
+      } else {
+        source.setData(nantesData.officialRoute as any);
+      }
+    }
+  }, [routeCoordinates]);
+
   // Réinitialisation au tracé initial
   const handleResetRoute = () => {
     setRouteCoordinates([]);
     setWaypoints([]);
+    routeCoordinatesRef.current = [];
+    try {
+      localStorage.removeItem(ADMIN_STORAGE_KEY);
+    } catch {}
     if (mapRef.current) {
       const source = mapRef.current.getSource("official-route") as maplibregl.GeoJSONSource | undefined;
       if (source) {
         source.setData(nantesData.officialRoute as any);
       }
+    }
+  };
+
+  // Exporter/Copier les coordonnées pour nantes.json
+  const handleCopyGeoJsonCoordinates = () => {
+    const coordsToExport =
+      routeCoordinates.length >= 2
+        ? routeCoordinates
+        : (nantesData.officialRoute.features[0].geometry.coordinates as [number, number][]);
+
+    const formatted = JSON.stringify(coordsToExport, null, 2);
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(formatted).then(() => {
+        setHasCopiedGeoJson(true);
+        setTimeout(() => setHasCopiedGeoJson(false), 3000);
+      });
+    } else {
+      prompt("Copiez les coordonnées JSON ci-dessous :", formatted);
     }
   };
 
@@ -852,6 +1004,15 @@ export default function AdminPage() {
               >
                 <Navigation className={`w-3.5 h-3.5 ${isCalculatingRoute ? "animate-spin" : ""}`} />
                 {isCalculatingRoute ? "Calcul le long des rues..." : "Recalculer le tracé sur la voirie"}
+              </button>
+
+              <button
+                onClick={handleCopyGeoJsonCoordinates}
+                className="w-full py-1.5 px-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
+                title="Copier les coordonnées pour mise à jour permanente dans nantes.json"
+              >
+                <Copy className="w-3 h-3 text-cyan-400" />
+                {hasCopiedGeoJson ? "✅ Coordonnées copiées (JSON) !" : "Copier les coordonnées pour nantes.json"}
               </button>
 
               <button
