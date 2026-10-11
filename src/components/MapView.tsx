@@ -568,13 +568,12 @@ export function MapView({
         NANTES_LYCEES.forEach((lycee) => {
           const el = document.createElement("div");
           el.className =
-            "lycee-marker cursor-pointer group transition-transform duration-150 hover:scale-110 z-15 hover:z-30";
+            "lycee-marker cursor-pointer group transition-transform duration-150 hover:scale-115 z-15 hover:z-30";
           el.setAttribute("title", `${lycee.name} (${lycee.district})`);
 
           el.innerHTML = `
-            <div class="lycee-pill px-2 py-0.5 rounded-full border border-orange-400/60 bg-zinc-950/90 flex items-center gap-1 shadow-md backdrop-blur-sm text-[10px] font-bold text-orange-200 select-none hover:border-orange-300 transition-all whitespace-nowrap">
-              <span>🎓</span>
-              <span class="lycee-label">${lycee.shortName}</span>
+            <div class="w-7 h-7 rounded-full border border-orange-400/75 bg-orange-950/90 flex items-center justify-center shadow-md backdrop-blur-sm text-xs select-none hover:border-white transition-colors">
+              🎓
             </div>
           `;
 
@@ -867,6 +866,7 @@ export function MapView({
     const blocusClusters = consensusMarkers.filter(
       (m) => m.category === "BLOCUS_LYCEE"
     );
+    const showNameLabels = poiCategoryFilter === "LYCEE";
 
     lyceeMarkersRef.current.forEach(({ marker, lycee }) => {
       const el = marker.getElement();
@@ -890,24 +890,31 @@ export function MapView({
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
             <div class="absolute -inset-1 rounded-full bg-orange-500/35 animate-ping"></div>
-            <div class="lycee-pill relative z-10 px-2.5 py-1 rounded-full border-2 border-orange-400 bg-orange-950/95 flex items-center gap-1.5 shadow-xl text-[10px] font-black text-white select-none whitespace-nowrap" style="box-shadow: 0 0 14px rgba(249,115,22,0.55);">
+            <div class="lycee-pill relative z-10 px-2.5 py-1 rounded-full border-2 border-orange-400 bg-orange-950/95 flex items-center gap-1.5 shadow-xl text-[11px] font-black text-white select-none whitespace-nowrap" style="box-shadow: 0 0 14px rgba(249,115,22,0.55);">
               <span>🚧</span>
               <span>${lycee.shortName}</span>
               <span class="px-1.5 py-0.2 rounded-full bg-orange-500 text-black text-[9px] font-mono font-black">BLOCUS (${count})</span>
             </div>
           </div>
         `;
-      } else {
-        // Moins de 5 signalements : affichage sobre du lycée
+      } else if (showNameLabels) {
+        // Vue filtrée « Lycées » : affiche le nom court de chaque établissement
         el.innerHTML = `
-          <div class="lycee-pill px-2 py-0.5 rounded-full border border-orange-400/50 bg-zinc-950/90 flex items-center gap-1 shadow-md backdrop-blur-sm text-[10px] font-bold text-orange-200 select-none hover:border-orange-300 transition-all whitespace-nowrap">
+          <div class="lycee-pill px-2.5 py-1 rounded-full border border-orange-400/70 bg-zinc-950/95 flex items-center gap-1.5 shadow-lg text-[11px] font-bold text-orange-200 select-none hover:border-orange-300 transition-all whitespace-nowrap">
             <span>🎓</span>
-            <span class="lycee-label">${lycee.shortName}</span>
+            <span>${lycee.shortName}</span>
+          </div>
+        `;
+      } else {
+        // Vue « Tous » : pastille circulaire épurée pour garder la carte aérée sur mobile
+        el.innerHTML = `
+          <div class="w-7 h-7 rounded-full border border-orange-400/75 bg-orange-950/90 flex items-center justify-center shadow-md backdrop-blur-sm text-xs select-none hover:border-white transition-colors">
+            🎓
           </div>
         `;
       }
     });
-  }, [consensusMarkers, mapLoaded]);
+  }, [consensusMarkers, poiCategoryFilter, mapLoaded]);
 
   // Synchronisation des marqueurs de consensus de rue (hors BLOCUS_LYCEE qui est porté par chaque lycée)
   useEffect(() => {
@@ -1154,14 +1161,17 @@ export function MapView({
         />
       )}
 
-      {/* Barre de filtres minimaliste en haut */}
-      <div className="absolute top-16 left-3 right-3 sm:left-4 sm:right-auto z-20 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+      {/* Barre de filtres aérée et bien positionnée sous l'en-tête (zéro superposition) */}
+      <div
+        className="absolute left-0 right-0 z-20 flex items-center gap-2 overflow-x-auto no-scrollbar px-2.5 sm:px-4 py-1.5"
+        style={{ top: "calc(max(8px, env(safe-area-inset-top, 8px)) + 60px)" }}
+      >
         <button
           onClick={() => setPoiCategoryFilter("ALL")}
-          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all whitespace-nowrap shadow-sm ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all whitespace-nowrap shadow-md min-h-[34px] flex items-center ${
             poiCategoryFilter === "ALL"
-              ? "bg-white text-black border-white shadow-md scale-105"
-              : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700"
+              ? "bg-white text-black border-white"
+              : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-white"
           }`}
         >
           Tous
@@ -1172,17 +1182,17 @@ export function MapView({
           onClick={() =>
             setPoiCategoryFilter(poiCategoryFilter === "LYCEE" ? "ALL" : "LYCEE")
           }
-          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
             poiCategoryFilter === "LYCEE"
-              ? "bg-orange-950/95 text-orange-300 border-orange-400 shadow-md scale-105"
+              ? "bg-orange-950 text-orange-200 border-orange-400"
               : activeBlocusLyceesCount > 0
-              ? "bg-orange-950/80 text-orange-300 border-orange-500/60 animate-pulse"
-              : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-orange-300 hover:border-orange-500/40"
+              ? "bg-orange-950/90 text-orange-200 border-orange-500 animate-pulse"
+              : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-orange-300"
           }`}
         >
           <span>🎓</span>
           <span>Lycées</span>
-          <span className="text-[9px] font-mono opacity-80">
+          <span className="text-[10px] font-mono opacity-85">
             {activeBlocusLyceesCount > 0
               ? `(${activeBlocusLyceesCount} blocus)`
               : `(${NANTES_LYCEES.length})`}
@@ -1192,10 +1202,10 @@ export function MapView({
         {/* Vue Caméras de Surveillance SunderS / OSM */}
         <button
           onClick={handleToggleCameras}
-          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
             isCamerasEnabled
-              ? "bg-rose-950/95 text-rose-300 border-rose-400 shadow-md scale-105 ring-1 ring-rose-500/40"
-              : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-rose-300 hover:border-rose-500/40"
+              ? "bg-rose-950 text-rose-200 border-rose-400 ring-1 ring-rose-500/40"
+              : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-rose-300"
           }`}
           title="Afficher/Masquer les caméras de surveillance (SunderS / OpenStreetMap)"
         >
@@ -1210,10 +1220,10 @@ export function MapView({
             <button
               key={cat}
               onClick={() => setPoiCategoryFilter(isActive ? "ALL" : cat)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
                 isActive
-                  ? `${meta.bg} ${meta.text} border-current shadow-md scale-105`
-                  : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
+                  ? `${meta.bg} ${meta.text} border-current`
+                  : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-white"
               }`}
             >
               <span>{meta.icon}</span>
@@ -1222,45 +1232,16 @@ export function MapView({
           );
         })}
 
-        {/* Bascule rapide du vent */}
-        <button
-          onClick={handleToggleWind}
-          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
-            isWindEnabled
-              ? "bg-cyan-950/90 text-cyan-300 border-cyan-400 shadow-md scale-105"
-              : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700"
-          }`}
-          title="Afficher/Masquer les flèches de vent"
-        >
-          <span>💨</span>
-          <span>Vent</span>
-        </button>
-
-        {/* Bascule 8 Zones Tactiques */}
-        {onToggleTacticalLayer && (
-          <button
-            onClick={onToggleTacticalLayer}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
-              isTacticalLayerEnabled
-                ? "bg-amber-950/95 text-amber-300 border-amber-400 shadow-md scale-105"
-                : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-amber-300 hover:border-amber-500/40"
-            }`}
-          >
-            <span>🏛️</span>
-            <span>Zones (8)</span>
-          </button>
-        )}
-
         {/* Analyseur Prédictif de Parcours */}
         {onOpenObservatory && (
           <button
             onClick={() => onOpenObservatory("route")}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
               routeAnalysis.globalVigilanceLevel === "CRITIQUE"
-                ? "bg-red-950/90 text-red-300 border-red-500/50"
+                ? "bg-red-950/95 text-red-200 border-red-500/60"
                 : routeAnalysis.globalVigilanceLevel === "ÉLEVÉE"
-                ? "bg-amber-950/90 text-amber-300 border-amber-500/50"
-                : "bg-indigo-950/90 text-indigo-300 border-indigo-500/50"
+                ? "bg-amber-950/95 text-amber-200 border-amber-500/60"
+                : "bg-indigo-950/95 text-indigo-200 border-indigo-500/60"
             }`}
           >
             <span>🛡️</span>
@@ -1270,14 +1251,14 @@ export function MapView({
       </div>
 
       {/* Boutons d'action flottants latéraux (Caméras SunderS, Zones, Vent, GPS, Recentrement) */}
-      <div className="absolute right-3 bottom-28 sm:bottom-24 z-20 flex flex-col gap-2">
+      <div className="absolute right-2.5 sm:right-4 bottom-[104px] sm:bottom-28 z-20 flex flex-col gap-2.5">
         {/* Bascule Caméras SunderS / OSM */}
         <button
           onClick={handleToggleCameras}
-          className={`p-3 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[46px] min-w-[46px] ${
+          className={`w-11 h-11 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center ${
             isCamerasEnabled
-              ? "bg-rose-500/20 border-rose-400 text-rose-300 ring-2 ring-rose-500/40"
-              : "bg-black/90 hover:bg-zinc-900 border-zinc-700/80 text-zinc-400 hover:text-rose-300"
+              ? "bg-rose-500/25 border-rose-400 text-rose-200 ring-2 ring-rose-500/40"
+              : "bg-black/90 hover:bg-zinc-900 border-zinc-700/90 text-zinc-300 hover:text-rose-300"
           }`}
           title={
             isCamerasEnabled
@@ -1293,10 +1274,10 @@ export function MapView({
         {onToggleTacticalLayer && (
           <button
             onClick={onToggleTacticalLayer}
-            className={`p-3 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[46px] min-w-[46px] ${
+            className={`w-11 h-11 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center ${
               isTacticalLayerEnabled
-                ? "bg-amber-500/20 border-amber-400 text-amber-300 ring-2 ring-amber-500/40"
-                : "bg-black/90 hover:bg-zinc-900 border-zinc-700/80 text-amber-400/80 hover:text-amber-300"
+                ? "bg-amber-500/25 border-amber-400 text-amber-200 ring-2 ring-amber-500/40"
+                : "bg-black/90 hover:bg-zinc-900 border-zinc-700/90 text-amber-300/90 hover:text-amber-200"
             }`}
             title="Afficher/Masquer les 8 zones tactiques"
             aria-label="Bascule zones tactiques"
@@ -1308,10 +1289,10 @@ export function MapView({
         {/* Bascule Vent */}
         <button
           onClick={handleToggleWind}
-          className={`p-3 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[46px] min-w-[46px] ${
+          className={`w-11 h-11 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center ${
             isWindEnabled
-              ? "bg-cyan-500/20 border-cyan-400 text-cyan-300 ring-2 ring-cyan-500/40"
-              : "bg-black/90 hover:bg-zinc-900 border-zinc-700/80 text-zinc-400 hover:text-white"
+              ? "bg-cyan-500/25 border-cyan-400 text-cyan-200 ring-2 ring-cyan-500/40"
+              : "bg-black/90 hover:bg-zinc-900 border-zinc-700/90 text-zinc-300 hover:text-white"
           }`}
           title="Afficher/Masquer le vent"
           aria-label="Bascule vent"
@@ -1323,7 +1304,7 @@ export function MapView({
         <button
           onClick={handleLocateMe}
           disabled={isLocating}
-          className="p-3 bg-black/90 hover:bg-zinc-900 border border-zinc-700/80 rounded-2xl text-blue-400 shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[46px] min-w-[46px]"
+          className="w-11 h-11 bg-black/90 hover:bg-zinc-900 border border-zinc-700/90 rounded-2xl text-blue-400 shadow-2xl transition-all active:scale-90 flex items-center justify-center"
           title="Centrer sur ma position GPS"
           aria-label="Recentrer sur ma position"
         >
@@ -1333,7 +1314,7 @@ export function MapView({
         {/* Recentrer sur Nantes */}
         <button
           onClick={handleRecenterRoute}
-          className="p-3 bg-black/90 hover:bg-zinc-900 border border-zinc-700/80 rounded-2xl text-cyan-400 shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[46px] min-w-[46px]"
+          className="w-11 h-11 bg-black/90 hover:bg-zinc-900 border border-zinc-700/90 rounded-2xl text-cyan-400 shadow-2xl transition-all active:scale-90 flex items-center justify-center"
           title="Centrer sur le parcours officiel"
           aria-label="Recentrer sur le parcours"
         >
@@ -1343,12 +1324,12 @@ export function MapView({
 
       {/* Bandeau Légende & Crédits SunderS quand la vue Caméras est active */}
       {isCamerasEnabled && !selectedCamera && (
-        <div className="absolute bottom-24 left-3 z-20 pointer-events-auto bg-black/85 backdrop-blur-md border border-zinc-800 rounded-2xl px-3 py-2 shadow-xl max-w-xs text-[10px] text-zinc-300 space-y-1">
-          <div className="flex items-center justify-between gap-3">
+        <div className="absolute bottom-[104px] left-2.5 right-16 sm:right-auto sm:max-w-xs z-20 pointer-events-auto bg-black/90 backdrop-blur-md border border-zinc-800 rounded-2xl px-3 py-2 shadow-xl text-[11px] text-zinc-200 space-y-1">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="font-bold text-white flex items-center gap-1">
-              📹 Surveillance (SunderS / OSM)
+              📹 Caméras SunderS
             </span>
-            <div className="flex items-center gap-2 font-mono text-[9px]">
+            <div className="flex items-center gap-2 font-mono text-[10px]">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Public
               </span>
@@ -1360,17 +1341,16 @@ export function MapView({
               </span>
             </div>
           </div>
-          <div className="text-[9px] text-zinc-500 leading-tight">
-            Source :{" "}
+          <div className="text-[10px] text-zinc-400 leading-tight">
             <a
               href="https://sunders.hamburg.ccc.de/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-zinc-400 underline hover:text-white"
+              className="text-zinc-300 underline hover:text-white"
             >
               CCCHH SunderS mirror
             </a>{" "}
-            • osmcamera by khris78 • Leaflet-Semicircle • © OpenStreetMap ODbL
+            • osmcamera • © OpenStreetMap ODbL
           </div>
         </div>
       )}

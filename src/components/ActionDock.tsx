@@ -210,19 +210,19 @@ export function ActionDock({
         )}
 
         {/* The 5 Action Buttons Container */}
-        <div className="pointer-events-auto w-full max-w-lg bg-black/90 backdrop-blur-xl border border-zinc-800 rounded-3xl p-2 shadow-2xl flex items-center justify-between gap-1.5">
+        <div className="pointer-events-auto w-full max-w-lg bg-black/90 backdrop-blur-xl border border-zinc-800/90 rounded-3xl p-2 shadow-2xl flex items-center justify-between gap-2">
           {/* 1. ZONE_GAZ */}
           <button
             onClick={() => handleButtonClick("ZONE_GAZ")}
             disabled={cooldownSeconds > 0}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] ${
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1.5 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[58px] ${
               cooldownSeconds > 0
                 ? "opacity-40 cursor-not-allowed bg-zinc-900"
-                : "bg-amber-500/15 hover:bg-amber-500/25 active:bg-amber-500/30 text-amber-300 border border-amber-500/30 shadow-sm"
+                : "bg-amber-500/15 hover:bg-amber-500/25 active:bg-amber-500/30 text-amber-300 border border-amber-500/35 shadow-sm"
             }`}
           >
-            <span className="text-amber-400 mb-0.5">{getIcon("ZONE_GAZ")}</span>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-tight text-white leading-tight">
+            <span className="text-amber-400 mb-1">{getIcon("ZONE_GAZ")}</span>
+            <span className="text-[11px] sm:text-xs font-bold tracking-tight text-white leading-none whitespace-nowrap">
               Gaz
             </span>
           </button>
@@ -231,15 +231,15 @@ export function ActionDock({
           <button
             onClick={() => handleButtonClick("VOIE_BLOQUEE")}
             disabled={cooldownSeconds > 0}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] ${
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1.5 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[58px] ${
               cooldownSeconds > 0
                 ? "opacity-40 cursor-not-allowed bg-zinc-900"
-                : "bg-red-500/15 hover:bg-red-500/25 active:bg-red-500/30 text-red-300 border border-red-500/30 shadow-sm"
+                : "bg-red-500/15 hover:bg-red-500/25 active:bg-red-500/30 text-red-300 border border-red-500/35 shadow-sm"
             }`}
           >
-            <span className="text-red-400 mb-0.5">{getIcon("VOIE_BLOQUEE")}</span>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-tight text-white leading-tight">
-              Voie Bloquée
+            <span className="text-red-400 mb-1">{getIcon("VOIE_BLOQUEE")}</span>
+            <span className="text-[11px] sm:text-xs font-bold tracking-tight text-white leading-none whitespace-nowrap">
+              Bloquée
             </span>
           </button>
 
@@ -247,14 +247,14 @@ export function ActionDock({
           <button
             onClick={() => handleButtonClick("POINT_BLOCAGE")}
             disabled={cooldownSeconds > 0}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] ${
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1.5 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[58px] ${
               cooldownSeconds > 0
                 ? "opacity-40 cursor-not-allowed bg-zinc-900"
-                : "bg-purple-500/15 hover:bg-purple-500/25 active:bg-purple-500/30 text-purple-300 border border-purple-500/30 shadow-sm"
+                : "bg-purple-500/15 hover:bg-purple-500/25 active:bg-purple-500/30 text-purple-300 border border-purple-500/35 shadow-sm"
             }`}
           >
-            <span className="text-purple-400 mb-0.5">{getIcon("POINT_BLOCAGE")}</span>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-tight text-white leading-tight">
+            <span className="text-purple-400 mb-1">{getIcon("POINT_BLOCAGE")}</span>
+            <span className="text-[11px] sm:text-xs font-bold tracking-tight text-white leading-none whitespace-nowrap">
               Blocage
             </span>
           </button>
@@ -263,15 +263,15 @@ export function ActionDock({
           <button
             onClick={() => handleButtonClick("BLOCUS_LYCEE")}
             disabled={cooldownSeconds > 0}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] ${
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1.5 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[58px] ${
               cooldownSeconds > 0
                 ? "opacity-40 cursor-not-allowed bg-zinc-900"
-                : "bg-orange-500/15 hover:bg-orange-500/25 active:bg-orange-500/30 text-orange-300 border border-orange-500/30 shadow-sm"
+                : "bg-orange-500/15 hover:bg-orange-500/25 active:bg-orange-500/30 text-orange-300 border border-orange-500/35 shadow-sm"
             }`}
           >
-            <span className="text-orange-400 mb-0.5">{getIcon("BLOCUS_LYCEE")}</span>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-tight text-white leading-tight">
-              Blocus Lycée
+            <span className="text-orange-400 mb-1">{getIcon("BLOCUS_LYCEE")}</span>
+            <span className="text-[11px] sm:text-xs font-bold tracking-tight text-white leading-none whitespace-nowrap">
+              Blocus
             </span>
           </button>
 
@@ -279,14 +279,14 @@ export function ActionDock({
           <button
             onClick={() => handleButtonClick("SECOURS_MEDIC")}
             disabled={cooldownSeconds > 0}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] ${
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1.5 rounded-2xl transition-all duration-150 active:scale-95 touch-manipulation min-h-[58px] ${
               cooldownSeconds > 0
                 ? "opacity-40 cursor-not-allowed bg-zinc-900"
-                : "bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 shadow-sm"
+                : "bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 shadow-sm"
             }`}
           >
-            <span className="text-emerald-400 mb-0.5">{getIcon("SECOURS_MEDIC")}</span>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-tight text-white leading-tight">
+            <span className="text-emerald-400 mb-1">{getIcon("SECOURS_MEDIC")}</span>
+            <span className="text-[11px] sm:text-xs font-bold tracking-tight text-white leading-none whitespace-nowrap">
               Médic
             </span>
           </button>

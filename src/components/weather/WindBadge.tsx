@@ -53,11 +53,14 @@ export function WindBadge({ windData, isLoading, onRefresh, onClose }: WindBadge
 
   return (
     <>
-      {/* 1. Pillule HUD minimaliste et discrète sur la carte */}
-      <div className="absolute top-28 left-3 sm:left-4 z-20 pointer-events-auto select-none animate-in fade-in duration-200">
+      {/* 1. Pillule HUD minimaliste et discrète sous la barre de filtres */}
+      <div
+        className="absolute left-3 sm:left-4 z-20 pointer-events-auto select-none animate-in fade-in duration-200"
+        style={{ top: "calc(max(8px, env(safe-area-inset-top, 8px)) + 108px)" }}
+      >
         <div
           onClick={() => setIsExpanded(true)}
-          className="group cursor-pointer bg-black/80 hover:bg-zinc-950/90 backdrop-blur-md border border-zinc-800 hover:border-cyan-500/40 rounded-full px-3 py-1.5 shadow-lg transition-all flex items-center gap-2 text-zinc-200"
+          className="group cursor-pointer bg-black/85 hover:bg-zinc-950 backdrop-blur-md border border-zinc-800 hover:border-cyan-500/40 rounded-full px-3 py-1.5 shadow-lg transition-all flex items-center gap-2 text-zinc-200"
           title="Détails du vent et dispersion"
         >
           <span className="text-cyan-300/90 flex items-center justify-center">

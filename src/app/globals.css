@@ -31,10 +31,57 @@ input {
   touch-action: manipulation;
 }
 
+/* Masquage propre des barres de défilement horizontales sur mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Styles personnalisés pour MapLibre GL dans un environnement sombre */
 .maplibregl-map {
   font-family: inherit;
   background-color: #050507;
+}
+
+/* Évite toute superposition entre les contrôles MapLibre et nos barres HUD */
+@media (max-width: 639px) {
+  .maplibregl-ctrl-top-right {
+    display: none !important;
+  }
+  .maplibregl-ctrl-bottom-left {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .maplibregl-ctrl-top-right {
+    top: 76px !important;
+    right: 6px !important;
+  }
+  .maplibregl-ctrl-bottom-left {
+    bottom: 92px !important;
+    left: 6px !important;
+  }
+}
+
+.maplibregl-ctrl-bottom-right {
+  bottom: 90px !important;
+  right: 60px !important;
+}
+
+.maplibregl-ctrl-group {
+  background: rgba(9, 9, 11, 0.9) !important;
+  border: 1px solid #27272a !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+.maplibregl-ctrl-group button {
+  filter: invert(1) hue-rotate(180deg);
 }
 
 .maplibregl-ctrl-attrib {
@@ -104,4 +151,3 @@ input {
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
-
