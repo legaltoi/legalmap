@@ -125,8 +125,8 @@ export function analyzeOfficialRoute(
     const { minDistanceMeters, closestIndex } = getMinDistanceToRoute(coords, sLng, sLat);
 
     // Seuil de traversée directe vs proximité immédiate
-    const traverseThreshold = sector.radiusMeters + 55;
-    const proximityThreshold = sector.radiusMeters + 240;
+    const traverseThreshold = sector.radiusMeters + 85;
+    const proximityThreshold = sector.radiusMeters + 340;
 
     if (minDistanceMeters <= proximityThreshold) {
       const proximityType = minDistanceMeters <= traverseThreshold ? "TRAVERSÉ" : "PROXIMITÉ";

@@ -140,11 +140,11 @@ export function HeaderBar({
             <button
               onClick={onOpenObservatory}
               className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-500/15 hover:bg-indigo-500/25 active:bg-indigo-500/35 border border-indigo-500/30 rounded-xl text-indigo-300 text-xs font-bold transition-all touch-manipulation min-h-[36px]"
-              title="Observatoire Bataille des Chiffres, Mémoire des Lieux & Analyseur de Parcours"
+              title="Parcours, Bataille des Chiffres & 8 Zones Tactiques"
             >
               <BarChart3 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Observatoire &amp; Analyse</span>
-              <span className="md:hidden">Chiffres</span>
+              <span className="hidden sm:inline">Infos &amp; Chiffres</span>
+              <span className="sm:hidden">Infos</span>
             </button>
           )}
 

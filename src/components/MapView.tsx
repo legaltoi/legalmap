@@ -81,20 +81,20 @@ function buildWindGeoJson(windData: WindData) {
   const barbDxRight = Math.sin(thetaRight) * barbLen;
   const barbDyRight = Math.cos(thetaRight) * barbLen;
 
-  // Grille des points d'observation sur Nantes
+  // Grille des points d'observation sur Nantes (coordonnées exactes OSM)
   const gridPoints: [number, number][] = [
-    [-1.5621, 47.2135], // Graslin
-    [-1.5583, 47.2155], // Royale
-    [-1.5583, 47.2132], // Commerce
-    [-1.553, 47.2155],  // Bouffay
-    [-1.55, 47.2162],   // Château
-    [-1.555, 47.2185],  // 50 Otages / Cirque
-    [-1.5582, 47.2195], // Bretagne
-    [-1.5535, 47.2215], // Préfecture
-    [-1.553, 47.211],   // CHU
-    [-1.542, 47.218],   // Gare Nord
-    [-1.565, 47.218],   // Guist'hau
-    [-1.5485, 47.214],  // Miroir d'Eau
+    [-1.56213, 47.21349], // Graslin
+    [-1.55825, 47.21431], // Royale
+    [-1.55830, 47.21330], // Commerce
+    [-1.55342, 47.21477], // Bouffay
+    [-1.54908, 47.21503], // Miroir d'Eau / Château
+    [-1.55543, 47.21790], // 50 Otages
+    [-1.55892, 47.21750], // Bretagne
+    [-1.55414, 47.22006], // Préfecture
+    [-1.55311, 47.21210], // CHU Hôtel-Dieu
+    [-1.54207, 47.21757], // Gare Nord
+    [-1.55232, 47.22753], // Waldeck-Rousseau
+    [-1.55796, 47.21164], // Gloriette / Feydeau
   ];
 
   const features = gridPoints.map(([lng, lat], idx) => {
@@ -730,22 +730,13 @@ export function MapView({
         CARNET_2_SECTORS.forEach((sec) => {
           const el = document.createElement("div");
           el.className = "tactical-sector-marker cursor-pointer z-20";
-          const evtCount = sec.linkedEvents.length;
-
           el.innerHTML = `
-            <div class="flex flex-col items-center group transition-transform duration-150 hover:scale-110">
-              <div class="px-2.5 py-1 rounded-full bg-black/90 backdrop-blur-md border-2 shadow-xl flex items-center gap-1.5 text-[11px] font-bold text-white whitespace-nowrap" style="border-color: ${sec.color}; box-shadow: 0 0 14px ${sec.color}55;">
+            <div class="group transition-transform duration-150 hover:scale-110">
+              <div class="px-2 py-0.5 rounded-full bg-black/90 backdrop-blur-md border shadow-lg flex items-center gap-1 text-[10px] font-bold text-white whitespace-nowrap" style="border-color: ${sec.color}; box-shadow: 0 0 10px ${sec.color}44;">
                 <span>${sec.icon}</span>
                 <span>${sec.shortName}</span>
-                <span class="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase" style="background-color: ${sec.color}33; color: ${sec.color};">${sec.riskLevel}</span>
+                <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${sec.color};"></span>
               </div>
-              ${
-                evtCount > 0
-                  ? `<div class="mt-0.5 px-1.5 py-0.2 rounded bg-amber-950/90 border border-amber-500/40 text-[9px] font-mono text-amber-300 shadow">
-                      📜 ${evtCount} archive(s) Carnet 1
-                    </div>`
-                  : ""
-              }
             </div>
           `;
 
@@ -1119,41 +1110,38 @@ export function MapView({
           )}
         </button>
 
-        {/* 1. Bascule Calque « Topographie Tactique & Mémoire des Lieux » (Carnet 2 + Carnet 1) */}
+        {/* 1. Bascule Calque « Topographie Tactique & Mémoire des Lieux » */}
         {onToggleTacticalLayer && (
           <button
             onClick={onToggleTacticalLayer}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
               isTacticalLayerEnabled
                 ? "bg-amber-950/95 text-amber-300 border-amber-400 shadow-md scale-105 ring-1 ring-amber-500/40"
                 : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-amber-300 hover:border-amber-500/40"
             }`}
-            title="Afficher/Masquer les 8 secteurs tactiques et jalons historiques (Carnets 1 & 2)"
+            title="Afficher/Masquer les 8 zones tactiques"
           >
             <span>🏛️</span>
-            <span>Mémoire &amp; Topo</span>
-            <span className="text-[9px] font-mono opacity-80">(8 zones)</span>
+            <span>Zones</span>
+            <span className="text-[9px] font-mono opacity-75">(8)</span>
           </button>
         )}
 
-        {/* 4. Badge « Analyseur Prédictif de Parcours » sur la carte publique */}
+        {/* 4. Badge « Analyseur Prédictif de Parcours » */}
         {onOpenObservatory && (
           <button
             onClick={() => onOpenObservatory("route")}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1 whitespace-nowrap shadow-sm ${
               routeAnalysis.globalVigilanceLevel === "CRITIQUE"
                 ? "bg-red-950/90 text-red-300 border-red-500/50 hover:border-red-400"
                 : routeAnalysis.globalVigilanceLevel === "ÉLEVÉE"
                 ? "bg-amber-950/90 text-amber-300 border-amber-500/50 hover:border-amber-400"
                 : "bg-indigo-950/90 text-indigo-300 border-indigo-500/50 hover:border-indigo-400"
             }`}
-            title="Ouvrir le diagnostic automatique du parcours officiel (Zones traversées, goulots & précédents)"
+            title="Diagnostic du parcours actif"
           >
             <span>🛡️</span>
-            <span>
-              Parcours : {routeAnalysis.traversedSectors.length} zones • Vigilance{" "}
-              {routeAnalysis.globalVigilanceLevel}
-            </span>
+            <span>Parcours ({routeAnalysis.traversedSectors.length})</span>
           </button>
         )}
       </div>
@@ -1171,10 +1159,10 @@ export function MapView({
             }`}
             title={
               isTacticalLayerEnabled
-                ? "Masquer le calque Topographie Tactique & Mémoire"
-                : "Afficher le calque Topographie Tactique & Mémoire (8 secteurs)"
+                ? "Masquer les 8 zones tactiques"
+                : "Afficher les 8 zones tactiques"
             }
-            aria-label="Bascule Topographie Tactique et Mémoire des Lieux"
+            aria-label="Bascule zones tactiques"
           >
             <Landmark className="w-5 h-5" />
           </button>
@@ -1216,132 +1204,76 @@ export function MapView({
         </button>
       </div>
 
-      {/* Fiche Détaillée d'un Secteur Tactique & Mémoire des Lieux (Carnet 2 + Carnet 1) */}
+      {/* Fiche Minimaliste d'un Secteur Tactique */}
       {selectedTacticalSector && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 sm:inset-auto sm:top-28 sm:left-4 z-40 flex items-end sm:items-start justify-center p-3 sm:p-0 bg-black/65 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
+          className="fixed inset-0 sm:inset-auto sm:top-28 sm:left-4 z-40 flex items-end sm:items-start justify-center p-3 sm:p-0 bg-black/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
         >
-          <div className="w-full max-w-md max-h-[80dvh] overflow-y-auto bg-[#0b0b0f] border border-zinc-700 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2 space-y-3">
+          <div className="w-full max-w-sm bg-[#0b0b0f] border border-zinc-700 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2 space-y-2.5">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border"
-                    style={{
-                      backgroundColor: `${selectedTacticalSector.color}20`,
-                      color: selectedTacticalSector.color,
-                      borderColor: `${selectedTacticalSector.color}50`,
-                    }}
-                  >
-                    {selectedTacticalSector.icon} Risque{" "}
-                    {selectedTacticalSector.riskLevel} •{" "}
-                    {selectedTacticalSector.tacticalType}
-                  </span>
-                </div>
-                <h4 className="font-black text-sm sm:text-base text-white mt-1.5">
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border"
+                  style={{
+                    backgroundColor: `${selectedTacticalSector.color}20`,
+                    color: selectedTacticalSector.color,
+                    borderColor: `${selectedTacticalSector.color}50`,
+                  }}
+                >
+                  {selectedTacticalSector.icon} {selectedTacticalSector.riskLevel} •{" "}
+                  {selectedTacticalSector.tacticalType}
+                </span>
+                <h4 className="font-black text-sm text-white mt-1">
                   {selectedTacticalSector.name}
                 </h4>
               </div>
               <button
                 onClick={() => setSelectedTacticalSector(null)}
-                aria-label="Fermer la fiche tactique"
-                className="p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800"
+                aria-label="Fermer"
+                className="p-1 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800">
-                <div className="text-[10px] font-mono text-sky-400 uppercase mb-1">
-                  Rôle Cortège &amp; Statut Juridique (RAA)
-                </div>
-                <ul className="space-y-0.5 text-zinc-300 text-[11px]">
-                  {selectedTacticalSector.roleAndLegal.map((item, i) => (
-                    <li key={i}>• {item}</li>
-                  ))}
-                </ul>
+            <div className="space-y-1.5 text-[11px]">
+              <div className="p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-start gap-2">
+                <span className="text-amber-400 font-bold shrink-0">⚠️</span>
+                <span className="text-zinc-200">{selectedTacticalSector.weaponsAndRisks[0]}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-start gap-2">
+                <span className="text-indigo-400 font-bold shrink-0">🛡️</span>
+                <span className="text-zinc-300">{selectedTacticalSector.policeDeployment[0]}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-start gap-2">
+                <span className="text-emerald-400 font-bold shrink-0">🏥</span>
+                <span className="text-zinc-300">{selectedTacticalSector.medicalAndLegalSupport[0]}</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800">
-                  <div className="text-[10px] font-mono text-indigo-400 uppercase mb-1">
-                    Dispositif FDO
-                  </div>
-                  <ul className="space-y-0.5 text-zinc-300 text-[11px]">
-                    {selectedTacticalSector.policeDeployment.map((item, i) => (
-                      <li key={i}>• {item}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800">
-                  <div className="text-[10px] font-mono text-amber-400 uppercase mb-1">
-                    Armes &amp; Risques
-                  </div>
-                  <ul className="space-y-0.5 text-zinc-300 text-[11px]">
-                    {selectedTacticalSector.weaponsAndRisks.map((item, i) => (
-                      <li key={i}>• {item}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-rose-500/30">
-                <div className="text-[10px] font-mono text-rose-400 uppercase mb-1">
-                  Incidents &amp; Précédents Documentés
-                </div>
-                <ul className="space-y-0.5 text-zinc-200 text-[11px]">
-                  {selectedTacticalSector.documentedIncidents.map((item, i) => (
-                    <li key={i}>• {item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-emerald-500/30">
-                <div className="text-[10px] font-mono text-emerald-400 uppercase mb-1">
-                  Acteurs de Secours, Défense &amp; Transports
-                </div>
-                <ul className="space-y-0.5 text-zinc-300 text-[11px]">
-                  {selectedTacticalSector.medicalAndLegalSupport.map((item, i) => (
-                    <li key={i}>• {item}</li>
-                  ))}
-                  {selectedTacticalSector.flowAndTransport.map((item, i) => (
-                    <li key={`fl-${i}`} className="text-zinc-400">
-                      • {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Archives Carnet 1 rattachées à ce secteur */}
               {CARNET_1_MILESTONES.filter(
                 (m) =>
                   m.sectorId === selectedTacticalSector.id ||
                   selectedTacticalSector.linkedEvents.includes(m.id)
-              ).map((evt) => (
-                <div
-                  key={evt.id}
-                  className="p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-1"
-                >
-                  <div className="text-[10px] font-mono font-bold text-amber-300">
-                    📜 Archive Carnet 1 ({evt.id} • {evt.dateFormatted})
+              )
+                .slice(0, 2)
+                .map((evt) => (
+                  <div
+                    key={evt.id}
+                    className="px-2.5 py-1.5 rounded-xl bg-amber-950/25 border border-amber-500/30 flex items-center justify-between gap-2 text-[10px]"
+                  >
+                    <span className="font-mono font-bold text-amber-300 shrink-0">
+                      📜 {evt.dateFormatted}
+                    </span>
+                    <span className="text-zinc-300 truncate">{evt.medicalToll}</span>
                   </div>
-                  <div className="text-[11px] font-bold text-white">
-                    {evt.context}
-                  </div>
-                  <div className="text-[11px] text-zinc-300">
-                    {evt.medicalToll}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             <div className="pt-1 flex items-center justify-between gap-2">
               <span className="text-[10px] text-zinc-500 truncate">
-                Sources : {selectedTacticalSector.sources.join(", ")}
+                {selectedTacticalSector.roleAndLegal[0]}
               </span>
               {onOpenObservatory && (
                 <button
@@ -1349,9 +1281,9 @@ export function MapView({
                     setSelectedTacticalSector(null);
                     onOpenObservatory("topo");
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold shrink-0"
+                  className="px-2.5 py-1 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold shrink-0"
                 >
-                  Ouvrir l&apos;Observatoire
+                  Détails →
                 </button>
               )}
             </div>
