@@ -7,10 +7,12 @@ import { ActionDock } from "@/components/ActionDock";
 import { LegalSheet } from "@/components/LegalSheet";
 import { LegalNotice } from "@/components/LegalNotice";
 import { SocialFeedModal } from "@/components/feed/SocialFeedModal";
+import { ObservatoryModal, ObservatoryTab } from "@/components/observatory/ObservatoryModal";
 import { Toolbar } from "@/components/layout/Toolbar";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
 import { CortegeState, ReportCategory } from "@/types";
+import { TacticalSector } from "@/config/data/nantes-carnets";
 import nantesData from "@/config/cities/nantes.json";
 
 // Import dynamique de MapView pour éviter toute erreur de SSR (window is not defined)
@@ -28,6 +30,7 @@ const MapView = dynamic(
 );
 
 const PUBLIC_CORTEGE_STORAGE_KEY = "legalmaps_public_cortege_state";
+const TACTICAL_LAYER_STORAGE_KEY = "legalmaps_show_tactical_topo";
 
 export default function HomePage() {
   // État officiel du cortège (par défaut MOBILE au démarrage)
@@ -37,6 +40,9 @@ export default function HomePage() {
     tail: null,
     updatedAt: Date.now(),
   });
+
+  // Calque « Topographie Tactique & Mémoire des Lieux » (désactivé par défaut)
+  const [isTacticalLayerEnabled, setIsTacticalLayerEnabled] = useState<boolean>(false);
 
   // Réhydratation locale de l'état officiel du cortège si reçu récemment (< 6h)
   useEffect(() => {
@@ -49,7 +55,21 @@ export default function HomePage() {
           setCortegeState(saved);
         }
       }
+      const savedTopo = localStorage.getItem(TACTICAL_LAYER_STORAGE_KEY);
+      if (savedTopo === "true") {
+        setIsTacticalLayerEnabled(true);
+      }
     } catch {}
+  }, []);
+
+  const handleToggleTacticalLayer = useCallback(() => {
+    setIsTacticalLayerEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(TACTICAL_LAYER_STORAGE_KEY, String(next));
+      } catch {}
+      return next;
+    });
   }, []);
 
   // Position GPS locale de l'utilisateur (zéro transmission réseau brute)
@@ -59,6 +79,31 @@ export default function HomePage() {
   const [isLegalSheetOpen, setIsLegalSheetOpen] = useState(false);
   const [isLegalNoticeOpen, setIsLegalNoticeOpen] = useState(false);
   const [isSocialFeedOpen, setIsSocialFeedOpen] = useState(false);
+  const [isObservatoryOpen, setIsObservatoryOpen] = useState(false);
+  const [observatoryInitialTab, setObservatoryInitialTab] = useState<ObservatoryTab>("route");
+
+  const handleOpenObservatory = useCallback((tab: ObservatoryTab = "route") => {
+    setObservatoryInitialTab(tab);
+    setIsObservatoryOpen(true);
+  }, []);
+
+  const handleFocusSectorOnMap = useCallback((sector: TacticalSector) => {
+    setIsTacticalLayerEnabled(true);
+    try {
+      localStorage.setItem(TACTICAL_LAYER_STORAGE_KEY, "true");
+    } catch {}
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("focus-tactical-sector", { detail: sector }));
+    }, 60);
+  }, []);
+
+  const handleFocusCoordinatesOnMap = useCallback((coords: [number, number], zoom = 16.5) => {
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("focus-map-coords", { detail: { coords, zoom } })
+      );
+    }, 60);
+  }, []);
 
   // Mode de pointage direct sur carte
   const [activeCategoryToPoint, setActiveCategoryToPoint] = useState<ReportCategory | null>(null);
@@ -143,6 +188,7 @@ export default function HomePage() {
         onOpenLegalSheet={() => setIsLegalSheetOpen(true)}
         onOpenLegalNotice={() => setIsLegalNoticeOpen(true)}
         onOpenSocialFeed={() => setIsSocialFeedOpen(true)}
+        onOpenObservatory={() => handleOpenObservatory("stats")}
         onRecenterCity={() => {
           // Rechargement doux de la vue centre
           const event = new CustomEvent("recenter-nantes");
@@ -159,6 +205,9 @@ export default function HomePage() {
           isMapSelectActive={Boolean(activeCategoryToPoint)}
           onMapClickReport={handleMapClick}
           onUserLocationFound={(coords) => setUserLocation(coords)}
+          isTacticalLayerEnabled={isTacticalLayerEnabled}
+          onToggleTacticalLayer={handleToggleTacticalLayer}
+          onOpenObservatory={handleOpenObservatory}
         />
       </div>
 
@@ -179,7 +228,7 @@ export default function HomePage() {
         isSolvingPoW={isSolvingPoW}
       />
 
-      {/* 5. Modales d'information et flux social */}
+      {/* 5. Modales d'information, Observatoire (Carnets 1-3) et Flux Social */}
       <LegalSheet
         isOpen={isLegalSheetOpen}
         onClose={() => setIsLegalSheetOpen(false)}
@@ -193,6 +242,18 @@ export default function HomePage() {
       <SocialFeedModal
         isOpen={isSocialFeedOpen}
         onClose={() => setIsSocialFeedOpen(false)}
+      />
+
+      <ObservatoryModal
+        isOpen={isObservatoryOpen}
+        onClose={() => setIsObservatoryOpen(false)}
+        initialTab={observatoryInitialTab}
+        routeCoordinates={cortegeState.routeCoordinates}
+        liveAttendance={cortegeState.attendanceFigures}
+        isTacticalLayerEnabled={isTacticalLayerEnabled}
+        onToggleTacticalLayer={handleToggleTacticalLayer}
+        onFocusSectorOnMap={handleFocusSectorOnMap}
+        onFocusCoordinatesOnMap={handleFocusCoordinatesOnMap}
       />
     </main>
   );

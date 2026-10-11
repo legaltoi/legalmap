@@ -74,11 +74,21 @@ export interface CortegePoint {
   updatedAt: number;
 }
 
+export interface OfficialAttendanceFigures {
+  policeCount: number | null;
+  unionCount: number | null;
+  thirdPartyCount?: number | null;
+  cycle?: string;
+  label?: string;
+  updatedAt: number;
+}
+
 export interface CortegeState {
   status: CortegeMovementStatus;
   head: CortegePoint | null;
   tail: CortegePoint | null;
   routeCoordinates?: [number, number][]; // Tracé bleu dynamique calqué sur les routes [lng, lat][]
+  attendanceFigures?: OfficialAttendanceFigures | null; // Chiffres officiels du jour (Préfecture vs Syndicats)
   updatedAt: number;
 }
 
@@ -91,6 +101,7 @@ export interface SignedCortegePayload {
     head: { lat: number; lng: number } | null;
     tail: { lat: number; lng: number } | null;
     routeCoordinates?: [number, number][]; // Tracé bleu dynamique [lng, lat][]
+    attendanceFigures?: OfficialAttendanceFigures | null;
     timestamp: number;
     nonce: string;
   };
@@ -124,6 +135,7 @@ export interface CityConfig {
   minZoom: number;
   maxZoom: number;
   bounds: [[number, number], [number, number]];
+  officialAttendance?: OfficialAttendanceFigures | null;
   officialRoute: {
     type: "FeatureCollection";
     features: Array<{

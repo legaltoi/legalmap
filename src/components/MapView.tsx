@@ -21,12 +21,46 @@ import {
   AlertCircle,
   Navigation,
   Wind,
+  Landmark,
+  ShieldAlert,
+  BookOpen,
+  BarChart3,
 } from "lucide-react";
 import { useWindData } from "@/hooks/useWindData";
 import { WindBadge } from "@/components/weather/WindBadge";
 import { WindData } from "@/services/weatherService";
+import {
+  CARNET_1_MILESTONES,
+  CARNET_2_SECTORS,
+  TacticalSector,
+} from "@/config/data/nantes-carnets";
+import { analyzeOfficialRoute } from "@/lib/routeAnalyzer";
+import { ObservatoryTab } from "@/components/observatory/ObservatoryModal";
 
 const WIND_STORAGE_KEY = "legalmaps_show_wind";
+
+/**
+ * Génère le GeoJSON des 8 polygones / halos tactiques du Carnet 2
+ */
+function buildTacticalSectorsGeoJson() {
+  return {
+    type: "FeatureCollection" as const,
+    features: CARNET_2_SECTORS.map((sec) => ({
+      type: "Feature" as const,
+      properties: {
+        id: sec.id,
+        name: sec.name,
+        shortName: sec.shortName,
+        riskLevel: sec.riskLevel,
+        color: sec.color,
+      },
+      geometry: {
+        type: "Polygon" as const,
+        coordinates: sec.polygon,
+      },
+    })),
+  };
+}
 
 /**
  * Génère les vecteurs de vent (flèches directionnelles orientées selon le souffle réel)
@@ -171,6 +205,9 @@ interface MapViewProps {
   onMapClickReport?: (coords: { lat: number; lng: number }) => void;
   isMapSelectActive?: boolean;
   onUserLocationFound?: (coords: { lat: number; lng: number }) => void;
+  isTacticalLayerEnabled?: boolean;
+  onToggleTacticalLayer?: () => void;
+  onOpenObservatory?: (tab?: ObservatoryTab) => void;
 }
 
 export function MapView({
@@ -180,6 +217,9 @@ export function MapView({
   onMapClickReport,
   isMapSelectActive = false,
   onUserLocationFound,
+  isTacticalLayerEnabled = false,
+  onToggleTacticalLayer,
+  onOpenObservatory,
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -190,12 +230,20 @@ export function MapView({
   const cortegeTailMarkerRef = useRef<maplibregl.Marker | null>(null);
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
   const poiItemsRef = useRef<Map<string, { marker: maplibregl.Marker; category: POICategory }>>(new Map());
+  const tacticalMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const [poiCategoryFilter, setPoiCategoryFilter] = useState<"ALL" | POICategory>("ALL");
 
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [selectedConsensus, setSelectedConsensus] = useState<ConsensusMarker | null>(null);
+  const [selectedTacticalSector, setSelectedTacticalSector] = useState<TacticalSector | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Analyse prédictive en temps réel du tracé officiel actif (Carnet 2 + Carnet 3)
+  const routeAnalysis = React.useMemo(
+    () => analyzeOfficialRoute(cortegeState.routeCoordinates),
+    [cortegeState.routeCoordinates]
+  );
 
   // Bascule du vent et de sa direction en temps réel (persistance locale)
   const [isWindEnabled, setIsWindEnabled] = useState(false);
@@ -525,6 +573,36 @@ export function MapView({
         });
       }
 
+      // 2b. Source et calques pour « Topographie Tactique & Mémoire des Lieux » (Carnet 2 : 8 zones)
+      if (!map.getSource("tactical-sectors-source")) {
+        map.addSource("tactical-sectors-source", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        map.addLayer({
+          id: "tactical-sectors-fill",
+          type: "fill",
+          source: "tactical-sectors-source",
+          paint: {
+            "fill-color": ["get", "color"],
+            "fill-opacity": 0.18,
+          },
+        });
+
+        map.addLayer({
+          id: "tactical-sectors-outline",
+          type: "line",
+          source: "tactical-sectors-source",
+          paint: {
+            "line-color": ["get", "color"],
+            "line-width": 2.2,
+            "line-opacity": 0.85,
+            "line-dasharray": [3, 2],
+          },
+        });
+      }
+
       // 3. Création des POIs statiques (Eau, Pharmacie, Urgences, Juridique, Toilettes)
       if (poiItemsRef.current.size === 0) {
         nantesData.pois.forEach((poi) => {
@@ -583,10 +661,118 @@ export function MapView({
       window.removeEventListener("resize", triggerResize);
       poiItemsRef.current.forEach(({ marker }) => marker.remove());
       poiItemsRef.current.clear();
+      tacticalMarkersRef.current.forEach((m) => m.remove());
+      tacticalMarkersRef.current.clear();
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Écoute des événements de navigation depuis l'Observatoire ou l'en-tête
+  useEffect(() => {
+    const handleFocusSector = (e: Event) => {
+      const custom = e as CustomEvent<TacticalSector>;
+      const sector = custom.detail;
+      if (!sector || !mapRef.current) return;
+      mapRef.current.flyTo({
+        center: sector.coordinates,
+        zoom: 15.8,
+        essential: true,
+      });
+      setSelectedTacticalSector(sector);
+    };
+
+    const handleFocusCoords = (
+      e: Event
+    ) => {
+      const custom = e as CustomEvent<{ coords: [number, number]; zoom?: number }>;
+      if (!custom.detail?.coords || !mapRef.current) return;
+      mapRef.current.flyTo({
+        center: custom.detail.coords,
+        zoom: custom.detail.zoom ?? 16,
+        essential: true,
+      });
+    };
+
+    const handleRecenterNantes = () => {
+      if (!mapRef.current) return;
+      mapRef.current.flyTo({
+        center: nantesData.center as [number, number],
+        zoom: nantesData.defaultZoom,
+        essential: true,
+      });
+    };
+
+    window.addEventListener("focus-tactical-sector", handleFocusSector);
+    window.addEventListener("focus-map-coords", handleFocusCoords);
+    window.addEventListener("recenter-nantes", handleRecenterNantes);
+    return () => {
+      window.removeEventListener("focus-tactical-sector", handleFocusSector);
+      window.removeEventListener("focus-map-coords", handleFocusCoords);
+      window.removeEventListener("recenter-nantes", handleRecenterNantes);
+    };
+  }, []);
+
+  // Synchronisation du Calque « Topographie Tactique & Mémoire des Lieux » (Carnet 2 + Carnet 1)
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+    const source = map.getSource("tactical-sectors-source") as
+      | maplibregl.GeoJSONSource
+      | undefined;
+
+    if (isTacticalLayerEnabled) {
+      if (source) {
+        source.setData(buildTacticalSectorsGeoJson() as any);
+      }
+
+      if (tacticalMarkersRef.current.size === 0) {
+        CARNET_2_SECTORS.forEach((sec) => {
+          const el = document.createElement("div");
+          el.className = "tactical-sector-marker cursor-pointer z-20";
+          const evtCount = sec.linkedEvents.length;
+
+          el.innerHTML = `
+            <div class="flex flex-col items-center group transition-transform duration-150 hover:scale-110">
+              <div class="px-2.5 py-1 rounded-full bg-black/90 backdrop-blur-md border-2 shadow-xl flex items-center gap-1.5 text-[11px] font-bold text-white whitespace-nowrap" style="border-color: ${sec.color}; box-shadow: 0 0 14px ${sec.color}55;">
+                <span>${sec.icon}</span>
+                <span>${sec.shortName}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase" style="background-color: ${sec.color}33; color: ${sec.color};">${sec.riskLevel}</span>
+              </div>
+              ${
+                evtCount > 0
+                  ? `<div class="mt-0.5 px-1.5 py-0.2 rounded bg-amber-950/90 border border-amber-500/40 text-[9px] font-mono text-amber-300 shadow">
+                      📜 ${evtCount} archive(s) Carnet 1
+                    </div>`
+                  : ""
+              }
+            </div>
+          `;
+
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            setSelectedTacticalSector(sec);
+            map.flyTo({
+              center: sec.coordinates,
+              zoom: Math.max(map.getZoom(), 15.3),
+              essential: true,
+            });
+          });
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat(sec.coordinates)
+            .addTo(map);
+          tacticalMarkersRef.current.set(sec.id, marker);
+        });
+      }
+    } else {
+      if (source) {
+        source.setData({ type: "FeatureCollection", features: [] } as any);
+      }
+      tacticalMarkersRef.current.forEach((m) => m.remove());
+      tacticalMarkersRef.current.clear();
+    }
+  }, [isTacticalLayerEnabled, mapLoaded]);
 
   // Filtrage dynamique des POIs sur la carte selon la catégorie sélectionnée
   useEffect(() => {
@@ -932,10 +1118,68 @@ export function MapView({
             </span>
           )}
         </button>
+
+        {/* 1. Bascule Calque « Topographie Tactique & Mémoire des Lieux » (Carnet 2 + Carnet 1) */}
+        {onToggleTacticalLayer && (
+          <button
+            onClick={onToggleTacticalLayer}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
+              isTacticalLayerEnabled
+                ? "bg-amber-950/95 text-amber-300 border-amber-400 shadow-md scale-105 ring-1 ring-amber-500/40"
+                : "bg-black/80 text-zinc-400 border-zinc-800 hover:text-amber-300 hover:border-amber-500/40"
+            }`}
+            title="Afficher/Masquer les 8 secteurs tactiques et jalons historiques (Carnets 1 & 2)"
+          >
+            <span>🏛️</span>
+            <span>Mémoire &amp; Topo</span>
+            <span className="text-[9px] font-mono opacity-80">(8 zones)</span>
+          </button>
+        )}
+
+        {/* 4. Badge « Analyseur Prédictif de Parcours » sur la carte publique */}
+        {onOpenObservatory && (
+          <button
+            onClick={() => onOpenObservatory("route")}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
+              routeAnalysis.globalVigilanceLevel === "CRITIQUE"
+                ? "bg-red-950/90 text-red-300 border-red-500/50 hover:border-red-400"
+                : routeAnalysis.globalVigilanceLevel === "ÉLEVÉE"
+                ? "bg-amber-950/90 text-amber-300 border-amber-500/50 hover:border-amber-400"
+                : "bg-indigo-950/90 text-indigo-300 border-indigo-500/50 hover:border-indigo-400"
+            }`}
+            title="Ouvrir le diagnostic automatique du parcours officiel (Zones traversées, goulots & précédents)"
+          >
+            <span>🛡️</span>
+            <span>
+              Parcours : {routeAnalysis.traversedSectors.length} zones • Vigilance{" "}
+              {routeAnalysis.globalVigilanceLevel}
+            </span>
+          </button>
+        )}
       </div>
 
-      {/* Boutons d'action flottants latéraux (Recentrement, GPS, Vent) */}
+      {/* Boutons d'action flottants latéraux (Mémoire/Topo, Vent, GPS, Recentrement) */}
       <div className="absolute right-3 bottom-28 sm:bottom-24 z-20 flex flex-col gap-2">
+        {/* Bascule Calque Topographie Tactique & Mémoire */}
+        {onToggleTacticalLayer && (
+          <button
+            onClick={onToggleTacticalLayer}
+            className={`p-3 rounded-2xl border shadow-2xl transition-all active:scale-90 flex items-center justify-center min-h-[48px] min-w-[48px] ${
+              isTacticalLayerEnabled
+                ? "bg-amber-500/20 border-amber-400 text-amber-300 ring-2 ring-amber-500/40 shadow-amber-900/40"
+                : "bg-black/90 hover:bg-zinc-900 border-zinc-700/80 text-amber-400/80 hover:text-amber-300"
+            }`}
+            title={
+              isTacticalLayerEnabled
+                ? "Masquer le calque Topographie Tactique & Mémoire"
+                : "Afficher le calque Topographie Tactique & Mémoire (8 secteurs)"
+            }
+            aria-label="Bascule Topographie Tactique et Mémoire des Lieux"
+          >
+            <Landmark className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Bascule Vent & Direction en Temps Réel */}
         <button
           onClick={handleToggleWind}
@@ -971,6 +1215,149 @@ export function MapView({
           <Compass className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Fiche Détaillée d'un Secteur Tactique & Mémoire des Lieux (Carnet 2 + Carnet 1) */}
+      {selectedTacticalSector && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 sm:inset-auto sm:top-28 sm:left-4 z-40 flex items-end sm:items-start justify-center p-3 sm:p-0 bg-black/65 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
+        >
+          <div className="w-full max-w-md max-h-[80dvh] overflow-y-auto bg-[#0b0b0f] border border-zinc-700 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border"
+                    style={{
+                      backgroundColor: `${selectedTacticalSector.color}20`,
+                      color: selectedTacticalSector.color,
+                      borderColor: `${selectedTacticalSector.color}50`,
+                    }}
+                  >
+                    {selectedTacticalSector.icon} Risque{" "}
+                    {selectedTacticalSector.riskLevel} •{" "}
+                    {selectedTacticalSector.tacticalType}
+                  </span>
+                </div>
+                <h4 className="font-black text-sm sm:text-base text-white mt-1.5">
+                  {selectedTacticalSector.name}
+                </h4>
+              </div>
+              <button
+                onClick={() => setSelectedTacticalSector(null)}
+                aria-label="Fermer la fiche tactique"
+                className="p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800">
+                <div className="text-[10px] font-mono text-sky-400 uppercase mb-1">
+                  Rôle Cortège &amp; Statut Juridique (RAA)
+                </div>
+                <ul className="space-y-0.5 text-zinc-300 text-[11px]">
+                  {selectedTacticalSector.roleAndLegal.map((item, i) => (
+                    <li key={i}>• {item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800">
+                  <div className="text-[10px] font-mono text-indigo-400 uppercase mb-1">
+                    Dispositif FDO
+                  </div>
+                  <ul className="space-y-0.5 text-zinc-300 text-[11px]">
+                    {selectedTacticalSector.policeDeployment.map((item, i) => (
+                      <li key={i}>• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800">
+                  <div className="text-[10px] font-mono text-amber-400 uppercase mb-1">
+                    Armes &amp; Risques
+                  </div>
+                  <ul className="space-y-0.5 text-zinc-300 text-[11px]">
+                    {selectedTacticalSector.weaponsAndRisks.map((item, i) => (
+                      <li key={i}>• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-rose-500/30">
+                <div className="text-[10px] font-mono text-rose-400 uppercase mb-1">
+                  Incidents &amp; Précédents Documentés
+                </div>
+                <ul className="space-y-0.5 text-zinc-200 text-[11px]">
+                  {selectedTacticalSector.documentedIncidents.map((item, i) => (
+                    <li key={i}>• {item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-emerald-500/30">
+                <div className="text-[10px] font-mono text-emerald-400 uppercase mb-1">
+                  Acteurs de Secours, Défense &amp; Transports
+                </div>
+                <ul className="space-y-0.5 text-zinc-300 text-[11px]">
+                  {selectedTacticalSector.medicalAndLegalSupport.map((item, i) => (
+                    <li key={i}>• {item}</li>
+                  ))}
+                  {selectedTacticalSector.flowAndTransport.map((item, i) => (
+                    <li key={`fl-${i}`} className="text-zinc-400">
+                      • {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Archives Carnet 1 rattachées à ce secteur */}
+              {CARNET_1_MILESTONES.filter(
+                (m) =>
+                  m.sectorId === selectedTacticalSector.id ||
+                  selectedTacticalSector.linkedEvents.includes(m.id)
+              ).map((evt) => (
+                <div
+                  key={evt.id}
+                  className="p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-1"
+                >
+                  <div className="text-[10px] font-mono font-bold text-amber-300">
+                    📜 Archive Carnet 1 ({evt.id} • {evt.dateFormatted})
+                  </div>
+                  <div className="text-[11px] font-bold text-white">
+                    {evt.context}
+                  </div>
+                  <div className="text-[11px] text-zinc-300">
+                    {evt.medicalToll}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-1 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-zinc-500 truncate">
+                Sources : {selectedTacticalSector.sources.join(", ")}
+              </span>
+              {onOpenObservatory && (
+                <button
+                  onClick={() => {
+                    setSelectedTacticalSector(null);
+                    onOpenObservatory("topo");
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold shrink-0"
+                >
+                  Ouvrir l&apos;Observatoire
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* POI Modal / Detail Card */}
       {selectedPoi && (

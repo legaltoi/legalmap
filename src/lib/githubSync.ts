@@ -14,11 +14,14 @@ const REPO_NAME = "legalmap";
 const TARGET_FILE_PATH = "src/config/cities/nantes.json";
 const TARGET_BRANCH = "main";
 
+import { OfficialAttendanceFigures } from "@/types";
+
 export interface SyncRouteParams {
   token: string;
-  routeCoordinates: [number, number][];
+  routeCoordinates?: [number, number][];
   headCoords?: { lat: number; lng: number } | null;
   tailCoords?: { lat: number; lng: number } | null;
+  attendanceFigures?: OfficialAttendanceFigures | null;
 }
 
 export interface SyncRouteResult {
@@ -81,18 +84,26 @@ export async function testGitHubToken(token: string): Promise<{ valid: boolean; 
 }
 
 /**
- * Injecte les coordonnées dans le fichier nantes.json et effectue un commit via l'API GitHub
+ * Injecte les coordonnées et/ou les chiffres du jour dans le fichier nantes.json et effectue un commit via l'API GitHub
  */
 export async function syncRouteToNantesJson(params: SyncRouteParams): Promise<SyncRouteResult> {
-  const { token, routeCoordinates, headCoords, tailCoords } = params;
+  const { token, routeCoordinates, headCoords, tailCoords, attendanceFigures } = params;
   const cleanToken = token.trim();
 
   if (!cleanToken) {
     return { success: false, error: "Aucun token GitHub fourni pour la synchronisation automatique." };
   }
 
-  if (!routeCoordinates || routeCoordinates.length < 2) {
-    return { success: false, error: "Le tracé doit comporter au moins 2 coordonnées." };
+  const hasRoute = Boolean(routeCoordinates && routeCoordinates.length >= 2);
+  const hasAttendance = Boolean(
+    attendanceFigures &&
+      (attendanceFigures.policeCount !== null ||
+        attendanceFigures.unionCount !== null ||
+        attendanceFigures.thirdPartyCount !== null)
+  );
+
+  if (!hasRoute && !hasAttendance) {
+    return { success: false, error: "Le tracé (min 2 points) ou les chiffres du jour doivent être renseignés." };
   }
 
   try {
@@ -121,22 +132,29 @@ export async function syncRouteToNantesJson(params: SyncRouteParams): Promise<Sy
     const rawContent = base64ToUtf8(fileData.content);
     const nantesJson = JSON.parse(rawContent);
 
-    // 2. Mise à jour de l'itinéraire déclaré principal
-    if (nantesJson.officialRoute?.features && nantesJson.officialRoute.features.length > 0) {
-      // Feature 0 : LineString du tracé
-      nantesJson.officialRoute.features[0].geometry.coordinates = routeCoordinates;
+    // 2. Mise à jour de l'itinéraire déclaré principal (si fourni)
+    if (hasRoute && routeCoordinates) {
+      if (nantesJson.officialRoute?.features && nantesJson.officialRoute.features.length > 0) {
+        // Feature 0 : LineString du tracé
+        nantesJson.officialRoute.features[0].geometry.coordinates = routeCoordinates;
 
-      // Feature 1 : Point de départ / rassemblement initial
-      if (headCoords && nantesJson.officialRoute.features[1]?.geometry) {
-        nantesJson.officialRoute.features[1].geometry.coordinates = [headCoords.lng, headCoords.lat];
-      }
+        // Feature 1 : Point de départ / rassemblement initial
+        if (headCoords && nantesJson.officialRoute.features[1]?.geometry) {
+          nantesJson.officialRoute.features[1].geometry.coordinates = [headCoords.lng, headCoords.lat];
+        }
 
-      // Feature 3 : Point de dispersion final
-      if (tailCoords && nantesJson.officialRoute.features[3]?.geometry) {
-        nantesJson.officialRoute.features[3].geometry.coordinates = [tailCoords.lng, tailCoords.lat];
+        // Feature 3 : Point de dispersion final
+        if (tailCoords && nantesJson.officialRoute.features[3]?.geometry) {
+          nantesJson.officialRoute.features[3].geometry.coordinates = [tailCoords.lng, tailCoords.lat];
+        }
+      } else {
+        return { success: false, error: "Structure GeoJSON inattendue dans nantes.json." };
       }
-    } else {
-      return { success: false, error: "Structure GeoJSON inattendue dans nantes.json." };
+    }
+
+    // 2b. Mise à jour des chiffres officiels du jour (si fournis)
+    if (attendanceFigures !== undefined) {
+      nantesJson.officialAttendance = attendanceFigures;
     }
 
     // 3. Préparation du contenu encodé
@@ -144,7 +162,7 @@ export async function syncRouteToNantesJson(params: SyncRouteParams): Promise<Sy
     const encodedContent = utf8ToBase64(updatedContentStr);
 
     const nowFormatted = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-    const commitMessage = `chore(cortege): actualisation automatique du tracé officiel (${nowFormatted}) [auto-sync]`;
+    const commitMessage = `chore(cortege): actualisation officielle tracé/chiffres (${nowFormatted}) [auto-sync]`;
 
     // 4. Commit via l'API GitHub
     const putRes = await fetch(fileUrl, {

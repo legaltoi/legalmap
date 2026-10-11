@@ -7,7 +7,7 @@
 
 import * as ed from "@noble/ed25519";
 import { sha512 } from "@noble/hashes/sha2.js";
-import { CortegeMovementStatus } from "@/types";
+import { CortegeMovementStatus, OfficialAttendanceFigures } from "@/types";
 
 // Configuration du hachage SHA-512 pour Ed25519
 ed.hashes.sha512 = (...m) => sha512(ed.etc.concatBytes(...m));
@@ -21,6 +21,7 @@ export interface CortegeMessageData {
   head: { lat: number; lng: number } | null;
   tail: { lat: number; lng: number } | null;
   routeCoordinates?: [number, number][]; // Tracé bleu le long des rues [lng, lat][]
+  attendanceFigures?: OfficialAttendanceFigures | null;
   timestamp: number; // Date.now() en millisecondes
   nonce: string; // Entropie anti-rejeu
 }
@@ -34,7 +35,7 @@ export interface SignedCortegePayload {
  * Sérialise les données du message de manière déterministe (canonique)
  */
 export function canonicalizeMessage(data: CortegeMessageData): Uint8Array {
-  const canonicalObject = {
+  const canonicalObject: Record<string, any> = {
     head: data.head ? { lat: Number(data.head.lat.toFixed(3)), lng: Number(data.head.lng.toFixed(3)) } : null,
     nonce: data.nonce,
     routeCoordinates:
@@ -45,6 +46,16 @@ export function canonicalizeMessage(data: CortegeMessageData): Uint8Array {
     tail: data.tail ? { lat: Number(data.tail.lat.toFixed(3)), lng: Number(data.tail.lng.toFixed(3)) } : null,
     timestamp: data.timestamp,
   };
+  if (data.attendanceFigures) {
+    canonicalObject.attendanceFigures = {
+      cycle: data.attendanceFigures.cycle || "",
+      label: data.attendanceFigures.label || "",
+      policeCount: data.attendanceFigures.policeCount ?? null,
+      thirdPartyCount: data.attendanceFigures.thirdPartyCount ?? null,
+      unionCount: data.attendanceFigures.unionCount ?? null,
+      updatedAt: data.attendanceFigures.updatedAt,
+    };
+  }
   return new TextEncoder().encode(JSON.stringify(canonicalObject));
 }
 

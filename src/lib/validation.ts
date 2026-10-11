@@ -53,6 +53,17 @@ const CoordinateSchema = z
   })
   .strict();
 
+const AttendanceFiguresSchema = z
+  .object({
+    policeCount: z.number().int().nonnegative().max(2_000_000).nullable(),
+    unionCount: z.number().int().nonnegative().max(2_000_000).nullable(),
+    thirdPartyCount: z.number().int().nonnegative().max(2_000_000).nullable().optional(),
+    cycle: z.string().max(120).optional(),
+    label: z.string().max(180).optional(),
+    updatedAt: z.number().int().positive(),
+  })
+  .strict();
+
 /**
  * Schéma Zod strict pour l'état du cortège signé par l'organisateur
  */
@@ -64,6 +75,7 @@ export const SignedCortegeSchema = z
         head: CoordinateSchema.nullable(),
         tail: CoordinateSchema.nullable(),
         routeCoordinates: z.array(z.tuple([z.number(), z.number()])).optional(),
+        attendanceFigures: AttendanceFiguresSchema.nullable().optional(),
         timestamp: z.number().int().positive(),
         nonce: z.string().min(8).max(64),
       })

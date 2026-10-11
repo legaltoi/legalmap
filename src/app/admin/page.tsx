@@ -54,9 +54,11 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
 import { syncRouteToNantesJson, testGitHubToken, SyncRouteResult } from "@/lib/githubSync";
+import { OfficialAttendanceFigures } from "@/types";
 
 const EXPECTED_PUBLIC_VERIFY_KEY =
   process.env.NEXT_PUBLIC_ADMIN_VERIFY_KEY || DEFAULT_ADMIN_VERIFY_KEY;
@@ -77,6 +79,12 @@ export default function AdminPage() {
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [hasCopiedGeoJson, setHasCopiedGeoJson] = useState(false);
+
+  // Chiffres officiels du Jour J (Observatoire « Bataille des Chiffres »)
+  const [policeCountInput, setPoliceCountInput] = useState<string>("");
+  const [unionCountInput, setUnionCountInput] = useState<string>("");
+  const [thirdPartyCountInput, setThirdPartyCountInput] = useState<string>("");
+  const [mobilisationLabel, setMobilisationLabel] = useState<string>("");
 
   // Mode de placement sur carte ('head' | 'tail' | 'waypoint' | null)
   const [placementMode, setPlacementMode] = useState<"head" | "tail" | "waypoint" | null>(null);
@@ -131,6 +139,10 @@ export default function AdminPage() {
             setRouteCoordinates(saved.routeCoordinates);
             routeCoordinatesRef.current = saved.routeCoordinates;
           }
+          if (typeof saved.policeCountInput === "string") setPoliceCountInput(saved.policeCountInput);
+          if (typeof saved.unionCountInput === "string") setUnionCountInput(saved.unionCountInput);
+          if (typeof saved.thirdPartyCountInput === "string") setThirdPartyCountInput(saved.thirdPartyCountInput);
+          if (typeof saved.mobilisationLabel === "string") setMobilisationLabel(saved.mobilisationLabel);
           if (saved.lastBroadcastTime) {
             setLastBroadcastTime(saved.lastBroadcastTime);
           }
@@ -162,6 +174,10 @@ export default function AdminPage() {
         tailCoords,
         waypoints,
         routeCoordinates,
+        policeCountInput,
+        unionCountInput,
+        thirdPartyCountInput,
+        mobilisationLabel,
         lastBroadcastTime,
         lastBroadcastSig,
       };
@@ -169,13 +185,39 @@ export default function AdminPage() {
     } catch (e) {
       console.warn("[LegalMaps Admin] Erreur lors de la sauvegarde du brouillon local:", e);
     }
-  }, [cortegeStatus, headCoords, tailCoords, waypoints, routeCoordinates, lastBroadcastTime, lastBroadcastSig]);
+  }, [
+    cortegeStatus,
+    headCoords,
+    tailCoords,
+    waypoints,
+    routeCoordinates,
+    policeCountInput,
+    unionCountInput,
+    thirdPartyCountInput,
+    mobilisationLabel,
+    lastBroadcastTime,
+    lastBroadcastSig,
+  ]);
 
   const { status: realtimeStatus, sendSignedCortegeState } = useRealtime({
     onCortegeStateReceived: (state) => {
       setCortegeStatus(state.status);
       if (state.head) setHeadCoords({ lat: state.head.lat, lng: state.head.lng });
       if (state.tail) setTailCoords({ lat: state.tail.lat, lng: state.tail.lng });
+      if (state.attendanceFigures) {
+        if (state.attendanceFigures.policeCount != null) {
+          setPoliceCountInput(String(state.attendanceFigures.policeCount));
+        }
+        if (state.attendanceFigures.unionCount != null) {
+          setUnionCountInput(String(state.attendanceFigures.unionCount));
+        }
+        if (state.attendanceFigures.thirdPartyCount != null) {
+          setThirdPartyCountInput(String(state.attendanceFigures.thirdPartyCount));
+        }
+        if (state.attendanceFigures.label) {
+          setMobilisationLabel(state.attendanceFigures.label);
+        }
+      }
       if (state.routeCoordinates && state.routeCoordinates.length >= 2) {
         setRouteCoordinates(state.routeCoordinates);
         routeCoordinatesRef.current = state.routeCoordinates;
@@ -752,7 +794,32 @@ export default function AdminPage() {
     }
   };
 
-  // Signature asymétrique Ed25519 et diffusion officielle (Statut + Tête + Fin + Tracé)
+  // Construction de l'objet OfficialAttendanceFigures à partir des champs saisis
+  const buildAttendanceFigures = (now: number): OfficialAttendanceFigures | null => {
+    const cleanPol = policeCountInput.trim() ? parseInt(policeCountInput.trim(), 10) : null;
+    const cleanUni = unionCountInput.trim() ? parseInt(unionCountInput.trim(), 10) : null;
+    const cleanThi = thirdPartyCountInput.trim()
+      ? parseInt(thirdPartyCountInput.trim(), 10)
+      : null;
+
+    const validPol = cleanPol != null && !isNaN(cleanPol) && cleanPol >= 0 ? cleanPol : null;
+    const validUni = cleanUni != null && !isNaN(cleanUni) && cleanUni >= 0 ? cleanUni : null;
+    const validThi = cleanThi != null && !isNaN(cleanThi) && cleanThi >= 0 ? cleanThi : null;
+
+    if (validPol === null && validUni === null && validThi === null) {
+      return null;
+    }
+
+    return {
+      policeCount: validPol,
+      unionCount: validUni,
+      thirdPartyCount: validThi,
+      label: mobilisationLabel.trim() || undefined,
+      updatedAt: now,
+    };
+  };
+
+  // Signature asymétrique Ed25519 et diffusion officielle (Statut + Tête + Fin + Tracé + Chiffres du Jour)
   const handleBroadcastSignedState = async () => {
     if (!privateKey) {
       alert("Clé privée non disponible pour la signature.");
@@ -761,12 +828,14 @@ export default function AdminPage() {
 
     setIsBroadcasting(true);
     const now = Date.now();
+    const attendanceFigures = buildAttendanceFigures(now);
 
     const messageData: CortegeMessageData = {
       status: cortegeStatus,
       head: headCoords ? { lat: headCoords.lat, lng: headCoords.lng } : null,
       tail: tailCoords ? { lat: tailCoords.lat, lng: tailCoords.lng } : null,
       routeCoordinates: routeCoordinates.length >= 2 ? routeCoordinates : undefined,
+      attendanceFigures: attendanceFigures || undefined,
       timestamp: now,
       nonce: `nonce_${now}_${Math.random().toString(36).substring(2, 10)}`,
     };
@@ -780,15 +849,20 @@ export default function AdminPage() {
     setLastBroadcastSig(signedPayload.signature.substring(0, 16) + "...");
 
     // Auto-commit automatique dans nantes.json sur GitHub si configuré
-    if (autoCommitGithub && githubToken.trim() && routeCoordinates.length >= 2) {
+    if (
+      autoCommitGithub &&
+      githubToken.trim() &&
+      (routeCoordinates.length >= 2 || attendanceFigures !== null)
+    ) {
       setIsSyncingGithub(true);
       setGithubSyncResult(null);
       try {
         const syncRes = await syncRouteToNantesJson({
           token: githubToken.trim(),
-          routeCoordinates,
+          routeCoordinates: routeCoordinates.length >= 2 ? routeCoordinates : undefined,
           headCoords,
           tailCoords,
+          attendanceFigures,
         });
         setGithubSyncResult(syncRes);
       } catch (err: any) {
@@ -802,14 +876,17 @@ export default function AdminPage() {
     }
   };
 
-  // Pousser manuellement le tracé actuel dans nantes.json sur GitHub
+  // Pousser manuellement le tracé actuel et/ou les chiffres du jour dans nantes.json sur GitHub
   const handleManualSyncGitHub = async () => {
     if (!githubToken.trim()) {
-      alert("Veuillez renseigner un Token GitHub (PAT) dans la section 5 ci-dessous.");
+      alert("Veuillez renseigner un Token GitHub (PAT) dans la section Auto-Commit ci-dessous.");
       return;
     }
-    if (routeCoordinates.length < 2) {
-      alert("Placez au moins 2 points et cliquez sur 'Recalculer le tracé sur la voirie' avant de pousser sur GitHub.");
+    const attendanceFigures = buildAttendanceFigures(Date.now());
+    if (routeCoordinates.length < 2 && !attendanceFigures) {
+      alert(
+        "Calculez un tracé (au moins 2 points) ou renseignez les chiffres du jour avant de pousser sur GitHub."
+      );
       return;
     }
 
@@ -818,9 +895,10 @@ export default function AdminPage() {
     try {
       const syncRes = await syncRouteToNantesJson({
         token: githubToken.trim(),
-        routeCoordinates,
+        routeCoordinates: routeCoordinates.length >= 2 ? routeCoordinates : undefined,
         headCoords,
         tailCoords,
+        attendanceFigures,
       });
       setGithubSyncResult(syncRes);
     } catch (err: any) {
@@ -1145,11 +1223,122 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* 5. Synchronisation Automatique GitHub (nantes.json) */}
+          {/* 5. Chiffres Officiels du Jour (Observatoire « Bataille des Chiffres ») */}
+          <div className="bg-zinc-900 border border-indigo-500/30 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <BarChart3 className="w-3.5 h-3.5" /> 5. Chiffres du Jour (Observatoire)
+              </span>
+              {(policeCountInput || unionCountInput || thirdPartyCountInput) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPoliceCountInput("");
+                    setUnionCountInput("");
+                    setThirdPartyCountInput("");
+                    setMobilisationLabel("");
+                  }}
+                  className="text-zinc-500 hover:text-red-400 p-1 text-[11px]"
+                  title="Réinitialiser les chiffres du jour"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <p className="text-[11px] text-zinc-400 leading-snug">
+              Diffusez en direct (signé Ed25519 + sauvegardé dans <code className="text-cyan-400 font-mono">nantes.json</code>) les chiffres officiels du jour dans l&apos;Observatoire public « Bataille des Chiffres ».
+            </p>
+
+            <div className="space-y-2">
+              <div>
+                <label className="block text-[10px] font-mono text-zinc-400 uppercase mb-1">
+                  Intitulé / Mouvement du jour (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={mobilisationLabel}
+                  onChange={(e) => setMobilisationLabel(e.target.value)}
+                  placeholder="Ex: Mobilisation intersyndicale Nantes"
+                  maxLength={140}
+                  className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-mono text-sky-400 uppercase mb-1">
+                    Préfecture / Police
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={2000000}
+                    value={policeCountInput}
+                    onChange={(e) => setPoliceCountInput(e.target.value)}
+                    placeholder="Ex: 15000"
+                    className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-sky-400 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-mono text-rose-400 uppercase mb-1">
+                    Syndicats / Org.
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={2000000}
+                    value={unionCountInput}
+                    onChange={(e) => setUnionCountInput(e.target.value)}
+                    placeholder="Ex: 42000"
+                    className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-rose-400 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-mono text-amber-400 uppercase mb-1">
+                  Estimation Tiers / Médias (optionnel)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={2000000}
+                  value={thirdPartyCountInput}
+                  onChange={(e) => setThirdPartyCountInput(e.target.value)}
+                  placeholder="Ex: 28000"
+                  className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 font-mono"
+                />
+              </div>
+
+              {policeCountInput &&
+                unionCountInput &&
+                parseInt(policeCountInput, 10) > 0 && (
+                  <div className="p-2 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-[11px] font-mono text-indigo-300 flex items-center justify-between">
+                    <span>Ratio calculé :</span>
+                    <span className="font-bold text-amber-300">
+                      {(
+                        parseInt(unionCountInput, 10) /
+                        parseInt(policeCountInput, 10)
+                      ).toFixed(2)}
+                      x (Écart : +
+                      {Math.abs(
+                        parseInt(unionCountInput, 10) -
+                          parseInt(policeCountInput, 10)
+                      ).toLocaleString("fr-FR")}
+                      )
+                    </span>
+                  </div>
+                )}
+            </div>
+          </div>
+
+          {/* 6. Synchronisation Automatique GitHub (nantes.json) */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                <GitCommit className="w-3.5 h-3.5 text-purple-400" /> 5. Auto-Commit GitHub (nantes.json)
+                <GitCommit className="w-3.5 h-3.5 text-purple-400" /> 6. Auto-Commit GitHub (nantes.json)
               </span>
               {githubToken ? (
                 <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-mono flex items-center gap-1">

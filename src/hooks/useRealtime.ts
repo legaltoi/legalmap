@@ -76,6 +76,7 @@ export function useRealtime({
                   ? { ...validCortege.data.tail, updatedAt: validCortege.data.timestamp }
                   : null,
                 routeCoordinates: validCortege.data.routeCoordinates,
+                attendanceFigures: validCortege.data.attendanceFigures ?? null,
                 updatedAt: validCortege.data.timestamp,
               });
             }
@@ -163,6 +164,7 @@ export function useRealtime({
               ? { ...validCortege.data.tail, updatedAt: validCortege.data.timestamp }
               : null,
             routeCoordinates: validCortege.data.routeCoordinates,
+            attendanceFigures: validCortege.data.attendanceFigures ?? null,
             updatedAt: validCortege.data.timestamp,
           });
         }
@@ -185,6 +187,7 @@ export function useRealtime({
                     ? { ...validCortege.data.tail, updatedAt: validCortege.data.timestamp }
                     : null,
                   routeCoordinates: validCortege.data.routeCoordinates,
+                  attendanceFigures: validCortege.data.attendanceFigures ?? null,
                   updatedAt: validCortege.data.timestamp,
                 });
               }
@@ -326,6 +329,7 @@ export function useRealtime({
           ? { ...signedPayload.data.tail, updatedAt: signedPayload.data.timestamp }
           : null,
         routeCoordinates: signedPayload.data.routeCoordinates,
+        attendanceFigures: signedPayload.data.attendanceFigures ?? null,
         updatedAt: signedPayload.data.timestamp,
       });
 

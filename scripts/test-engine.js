@@ -146,4 +146,41 @@ const signedRoutePayload = signCortegeState(
 );
 assert(validateInboundCortege(signedRoutePayload) !== null, "Validation sanitization et signature Ed25519 pour le tracé dynamique");
 
+// 6. État du cortège avec Chiffres du Jour (Observatoire Bataille des Chiffres) signé et validé
+const signedAttendancePayload = signCortegeState(
+  {
+    ...validMessageData,
+    attendanceFigures: {
+      policeCount: 15000,
+      unionCount: 42000,
+      thirdPartyCount: 28000,
+      label: "Mobilisation intersyndicale Nantes",
+      updatedAt: Date.now(),
+    },
+  },
+  testPrivKey
+);
+assert(
+  validateInboundCortege(signedAttendancePayload) !== null,
+  "Validation sanitization et signature Ed25519 pour les Chiffres du Jour (Observatoire)"
+);
+
+console.log("\n=== 5. TEST DES 3 CARNETS, OBSERVATOIRE STATISTIQUE & ANALYSEUR DE PARCOURS ===");
+const { CARNET_1_MILESTONES, CARNET_2_SECTORS, CARNET_3_PROTESTS } = require("../src/config/data/nantes-carnets.ts");
+const { analyzeOfficialRoute, getGlobalObservatoryStats } = require("../src/lib/routeAnalyzer.ts");
+
+assert(CARNET_1_MILESTONES.length === 9, `Carnet 1 chargé intégralement (${CARNET_1_MILESTONES.length}/9 jalons 1955-2026)`);
+assert(CARNET_2_SECTORS.length === 8, `Carnet 2 chargé intégralement (${CARNET_2_SECTORS.length}/8 secteurs tactiques)`);
+assert(CARNET_3_PROTESTS.length === 75, `Carnet 3 chargé intégralement (${CARNET_3_PROTESTS.length}/75 manifestations 2006-2024)`);
+
+const globalStats = getGlobalObservatoryStats();
+assert(globalStats.totalProtests === 75 && globalStats.avgRatio > 2.0, `Statistiques Observatoire valides : ratio moyen ${globalStats.avgRatio}x sur 75 manifs`);
+
+const routeDiagnosis = analyzeOfficialRoute();
+assert(
+  routeDiagnosis.traversedSectors.length >= 2 && routeDiagnosis.totalDistanceKm > 0,
+  `Analyseur prédictif de parcours opérationnel : ${routeDiagnosis.traversedSectors.length} zones détectées (${routeDiagnosis.totalDistanceKm} km, vigilance ${routeDiagnosis.globalVigilanceLevel})`
+);
+
 console.log(`\n🎉 TOUS LES TESTS DE CYBERSÉCURITÉ ET MOTEUR SONT VALIDÉS (${passedTests}/${totalTests}) !`);
+
