@@ -340,15 +340,6 @@ export function MapView({
     });
 
     map.addControl(
-      new maplibregl.NavigationControl({
-        showCompass: true,
-        showZoom: true,
-        visualizePitch: true,
-      }),
-      "top-right"
-    );
-
-    map.addControl(
       new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" }),
       "bottom-left"
     );
@@ -1199,93 +1190,64 @@ export function MapView({
         />
       )}
 
-      {/* Barre de filtres aérée et bien positionnée sous l'en-tête (zéro superposition) */}
+      {/* Barre de filtres aérée, lisible et alignée sous la Topbar */}
       <div
-        className="absolute left-0 right-0 z-20 flex items-center gap-2 overflow-x-auto no-scrollbar px-2.5 sm:px-4 py-1.5"
-        style={{ top: "calc(max(8px, env(safe-area-inset-top, 8px)) + 60px)" }}
+        className="absolute left-0 right-0 z-20 pointer-events-none px-2.5 sm:px-4"
+        style={{ top: "calc(max(10px, env(safe-area-inset-top, 10px)) + 68px)" }}
       >
-        <button
-          onClick={() => setPoiCategoryFilter("ALL")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all whitespace-nowrap shadow-md min-h-[34px] flex items-center ${
-            poiCategoryFilter === "ALL"
-              ? "bg-white text-black border-white"
-              : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-white"
-          }`}
-        >
-          Tous
-        </button>
-
-        {/* Filtre Lycées & Blocus */}
-        <button
-          onClick={() =>
-            setPoiCategoryFilter(poiCategoryFilter === "LYCEE" ? "ALL" : "LYCEE")
-          }
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
-            poiCategoryFilter === "LYCEE"
-              ? "bg-orange-950 text-orange-200 border-orange-400"
-              : activeBlocusLyceesCount > 0
-              ? "bg-orange-950/90 text-orange-200 border-orange-500 animate-pulse"
-              : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-orange-300"
-          }`}
-        >
-          <span>🎓</span>
-          <span>Lycées</span>
-          <span className="text-[10px] font-mono opacity-85">
-            {activeBlocusLyceesCount > 0
-              ? `(${activeBlocusLyceesCount} blocus)`
-              : `(${NANTES_LYCEES.length})`}
-          </span>
-        </button>
-
-        {/* Vue Caméras de Surveillance SunderS / OSM */}
-        <button
-          onClick={handleToggleCameras}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
-            isCamerasEnabled
-              ? "bg-rose-950 text-rose-200 border-rose-400 ring-1 ring-rose-500/40"
-              : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-rose-300"
-          }`}
-          title="Afficher/Masquer les caméras de surveillance (SunderS / OpenStreetMap)"
-        >
-          <span>📹</span>
-          <span>Caméras</span>
-        </button>
-
-        {(["WATER", "PHARMACY", "HOSPITAL", "EMERGENCY", "TOILET"] as POICategory[]).map((cat) => {
-          const meta = POI_META[cat];
-          const isActive = poiCategoryFilter === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setPoiCategoryFilter(isActive ? "ALL" : cat)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
-                isActive
-                  ? `${meta.bg} ${meta.text} border-current`
-                  : "bg-black/90 text-zinc-200 border-zinc-700/80 hover:text-white"
-              }`}
-            >
-              <span>{meta.icon}</span>
-              <span>{meta.label}</span>
-            </button>
-          );
-        })}
-
-        {/* Analyseur Prédictif de Parcours */}
-        {onOpenObservatory && (
+        <div className="pointer-events-auto max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           <button
-            onClick={() => onOpenObservatory("route")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[34px] ${
-              routeAnalysis.globalVigilanceLevel === "CRITIQUE"
-                ? "bg-red-950/95 text-red-200 border-red-500/60"
-                : routeAnalysis.globalVigilanceLevel === "ÉLEVÉE"
-                ? "bg-amber-950/95 text-amber-200 border-amber-500/60"
-                : "bg-indigo-950/95 text-indigo-200 border-indigo-500/60"
+            onClick={() => setPoiCategoryFilter("ALL")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all whitespace-nowrap shadow-md min-h-[36px] flex items-center ${
+              poiCategoryFilter === "ALL"
+                ? "bg-white text-black border-white"
+                : "bg-zinc-950/90 text-zinc-200 border-zinc-800 hover:border-zinc-700 hover:text-white"
             }`}
           >
-            <span>🛡️</span>
-            <span>Parcours ({routeAnalysis.traversedSectors.length})</span>
+            Tous
           </button>
-        )}
+
+          {/* Filtre Lycées & Blocus */}
+          <button
+            onClick={() =>
+              setPoiCategoryFilter(poiCategoryFilter === "LYCEE" ? "ALL" : "LYCEE")
+            }
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[36px] ${
+              poiCategoryFilter === "LYCEE"
+                ? "bg-orange-950 text-orange-200 border-orange-400"
+                : activeBlocusLyceesCount > 0
+                ? "bg-orange-950/90 text-orange-200 border-orange-500 animate-pulse"
+                : "bg-zinc-950/90 text-zinc-200 border-zinc-800 hover:border-zinc-700 hover:text-orange-300"
+            }`}
+          >
+            <span>🎓</span>
+            <span>Lycées</span>
+            <span className="text-[10px] font-mono opacity-85">
+              {activeBlocusLyceesCount > 0
+                ? `(${activeBlocusLyceesCount} blocus)`
+                : `(${NANTES_LYCEES.length})`}
+            </span>
+          </button>
+
+          {(["WATER", "PHARMACY", "HOSPITAL", "EMERGENCY", "TOILET"] as POICategory[]).map((cat) => {
+            const meta = POI_META[cat];
+            const isActive = poiCategoryFilter === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setPoiCategoryFilter(isActive ? "ALL" : cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[36px] ${
+                  isActive
+                    ? `${meta.bg} ${meta.text} border-current`
+                    : "bg-zinc-950/90 text-zinc-200 border-zinc-800 hover:border-zinc-700 hover:text-white"
+                }`}
+              >
+                <span>{meta.icon}</span>
+                <span>{meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Boutons d'action flottants latéraux (Caméras SunderS, Zones, Vent, GPS, Recentrement) */}

@@ -467,8 +467,8 @@ export function ObservatoryModal({
                   </div>
                 </div>
               ) : (
-                <div className="px-3 py-2 rounded-xl bg-zinc-900/70 border border-zinc-800 text-[11px] text-zinc-400 flex items-center justify-between">
-                  <span>Comptage du jour : en attente de diffusion (/admin)</span>
+                <div className="px-3.5 py-2.5 rounded-xl bg-zinc-900/70 border border-zinc-800 text-[11px] text-zinc-400 flex items-center justify-between gap-2 flex-wrap">
+                  <span>Comptage du jour : en attente des estimations</span>
                   <span className="font-mono text-indigo-400">Archives 2006–2024 actives</span>
                 </div>
               )}
@@ -498,22 +498,22 @@ export function ObservatoryModal({
               <div>
                 <button
                   onClick={() => setShowEurecamNote((prev) => !prev)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs text-amber-300 font-medium"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs text-amber-300 font-medium text-left gap-2"
                 >
                   <span className="flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-amber-400" />
-                    Pourquoi cet écart ? (Étude Eurecam / Occurrence • Carnet 1)
+                    <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Pourquoi cet écart ? (Méthodologie Eurecam / Occurrence)</span>
                   </span>
                   {showEurecamNote ? (
-                    <ChevronUp className="w-3.5 h-3.5" />
+                    <ChevronUp className="w-3.5 h-3.5 shrink-0" />
                   ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
+                    <ChevronDown className="w-3.5 h-3.5 shrink-0" />
                   )}
                 </button>
                 {showEurecamNote && (
                   <div className="mt-1.5 p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 text-[11px] text-zinc-300 space-y-1">
                     <p>
-                      • <strong>Capteur Eurecam / Occurrence (EVT-06 &amp; 07)</strong> : Testé en 2017-2018 (écart 8% avec recomptage vidéo sur axe droit, mais contesté sur les cortèges denses ou scindés — <em>É. Provendier, RFSP</em>).
+                      • <strong>Capteur Eurecam / Occurrence (2017–2018)</strong> : Testé sur parcours linéaire (écart 8% avec recomptage vidéo sur axe droit, mais contesté sur les cortèges denses ou scindés — <em>É. Provendier, RFSP</em>).
                     </p>
                     <p>
                       • <strong>Spécificité Nantes</strong> : Comptage policier depuis les points hauts du Cours des 50-Otages, faussé lors des scissions ou déviations par les ruelles (Place Royale / Commerce).
@@ -640,7 +640,7 @@ export function ObservatoryModal({
               {/* Grille compacte des 8 Zones Tactiques */}
               <div className="space-y-2">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
-                  Les 8 Secteurs Tactiques (Carnet 2)
+                  Topographie Urbaine • 8 Zones Sensibles
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -713,7 +713,7 @@ export function ObservatoryModal({
               {/* Les 9 Jalons Historiques en liste ultra-concise */}
               <div className="space-y-2 pt-2 border-t border-zinc-800">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
-                  Mémoire des Lieux • 1955–2026 (Carnet 1)
+                  Chronologie &amp; Mémoire des Lieux (1955–2026)
                 </div>
 
                 <div className="space-y-1.5">

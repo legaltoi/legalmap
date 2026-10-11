@@ -16,20 +16,26 @@ export function LegalNotice({ isOpen, onClose }: LegalNoticeProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="legal-notice-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-2xl max-h-[85vh] bg-[#0c0c0e] border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-zinc-100">
+      <div
+        className="relative w-full sm:max-w-2xl max-h-[90dvh] sm:max-h-[85vh] bg-[#0c0c0e] border-t sm:border border-zinc-800 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden text-zinc-100"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
+          <div className="w-12 h-1.5 bg-zinc-700 rounded-full" />
+        </div>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-[#121216]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-zinc-800 bg-[#121216]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 shrink-0">
               <Scale className="w-5 h-5" />
             </div>
-            <div>
-              <h2 id="legal-notice-title" className="text-lg font-bold tracking-tight text-white">
-                Mentions Légales & Cadre Juridique
+            <div className="min-w-0">
+              <h2 id="legal-notice-title" className="text-sm sm:text-lg font-bold tracking-tight text-white truncate">
+                Mentions Légales &amp; Cadre Juridique
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p className="text-[11px] sm:text-xs text-zinc-400 truncate">
                 Article 6-III-2 LCEN &amp; Conformité RGPD Privacy-by-Design
               </p>
             </div>
@@ -37,14 +43,14 @@ export function LegalNotice({ isOpen, onClose }: LegalNoticeProps) {
           <button
             onClick={onClose}
             aria-label="Fermer"
-            className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800/80 transition-colors"
+            className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800/80 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm text-zinc-300 leading-relaxed">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 text-xs sm:text-sm text-zinc-300 leading-relaxed overscroll-contain">
           {/* Statut Éditeur */}
           <section className="bg-zinc-900/60 border border-zinc-800/80 p-4 rounded-xl">
             <div className="flex items-center gap-2 mb-2 text-white font-semibold">

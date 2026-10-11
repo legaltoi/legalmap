@@ -88,6 +88,7 @@ export default function AdminPage() {
 
   // Mode de placement sur carte ('head' | 'tail' | 'waypoint' | null)
   const [placementMode, setPlacementMode] = useState<"head" | "tail" | "waypoint" | null>(null);
+  const [mobileAdminView, setMobileAdminView] = useState<"controls" | "map">("controls");
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [lastBroadcastTime, setLastBroadcastTime] = useState<number | null>(null);
   const [lastBroadcastSig, setLastBroadcastSig] = useState<string | null>(null);
@@ -969,30 +970,33 @@ export default function AdminPage() {
     );
   }
 
-  // Dashboard d'administration sécurisé
+  // Dashboard d'administration sécurisé (100% Responsive Mobile / Tablette / Desktop)
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Header Admin */}
-      <header className="px-4 py-3 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="h-[100dvh] bg-black text-white flex flex-col overflow-hidden">
+      {/* Header Admin Aéré & Responsive */}
+      <header
+        className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-zinc-800/90 bg-zinc-950/95 backdrop-blur-xl flex items-center justify-between gap-2 shrink-0"
+        style={{ paddingTop: "max(10px, env(safe-area-inset-top, 10px))" }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
           <Link
             href="/"
             aria-label="Retour à la carte publique"
-            className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors"
+            className="w-9 h-9 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-xl transition-colors flex items-center justify-center shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black tracking-wider text-cyan-400">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs sm:text-sm font-black tracking-wider text-cyan-400 truncate">
                 CONSOLE ORGANISATEUR
               </span>
-              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-mono flex items-center gap-1">
+              <span className="hidden xs:inline-flex px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-mono items-center gap-1 shrink-0">
                 <ShieldCheck className="w-3 h-3" />
-                Ed25519 Signé
+                Ed25519
               </span>
             </div>
-            <p className="text-[10px] text-zinc-400">
+            <p className="text-[10px] text-zinc-400 truncate mt-0.5">
               Diffusion certifiée • Relais {realtimeStatus}
             </p>
           </div>
@@ -1001,23 +1005,69 @@ export default function AdminPage() {
         <button
           onClick={handleBroadcastSignedState}
           disabled={isBroadcasting || isSyncingGithub}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-colors active:scale-95 disabled:opacity-60"
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] sm:text-xs rounded-xl shadow-lg transition-colors active:scale-95 disabled:opacity-60 shrink-0 min-h-[38px]"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isBroadcasting || isSyncingGithub ? "animate-spin" : ""}`} />
-          {isSyncingGithub ? "Auto-Commit GitHub..." : isBroadcasting ? "Diffusion..." : "Signer & Diffuser en Direct"}
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isBroadcasting || isSyncingGithub ? "animate-spin" : ""}`} />
+          <span className="hidden sm:inline">
+            {isSyncingGithub
+              ? "Auto-Commit GitHub..."
+              : isBroadcasting
+              ? "Diffusion..."
+              : "Signer & Diffuser en Direct"}
+          </span>
+          <span className="sm:hidden">
+            {isSyncingGithub ? "GitHub..." : isBroadcasting ? "Envoi..." : "Signer & Diffuser"}
+          </span>
         </button>
       </header>
 
-      {/* Main Grid */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
-        {/* Panel gauche : Commandes */}
-        <div className="p-4 bg-zinc-900/60 border-r border-zinc-800 space-y-5 overflow-y-auto">
+      {/* Sélecteur Mobile / Tablette : Réglages vs Carte Interactive */}
+      <div className="lg:hidden px-3 py-2 bg-zinc-950 border-b border-zinc-800/80 grid grid-cols-2 gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileAdminView("controls")}
+          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            mobileAdminView === "controls"
+              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+              : "bg-zinc-900 text-zinc-400 border border-zinc-800"
+          }`}
+        >
+          <span>⚙️ Réglages &amp; Chiffres</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMobileAdminView("map");
+            setTimeout(() => mapRef.current?.resize(), 60);
+          }}
+          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            mobileAdminView === "map"
+              ? "bg-blue-500/25 text-blue-200 border border-blue-400/50"
+              : placementMode
+              ? "bg-blue-600 text-white border border-blue-400 animate-pulse"
+              : "bg-zinc-900 text-zinc-400 border border-zinc-800"
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5" />
+          <span>Carte &amp; Tracé ({waypoints.length})</span>
+        </button>
+      </div>
+
+      {/* Main Responsive Grid */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden min-h-0">
+        {/* Panel gauche : Commandes (Scrollable indépendamment) */}
+        <div
+          className={`lg:col-span-5 xl:col-span-4 p-3.5 sm:p-5 bg-zinc-950/90 border-r border-zinc-800/90 space-y-4 overflow-y-auto overscroll-contain min-h-0 ${
+            mobileAdminView === "map" ? "hidden lg:block" : "block"
+          }`}
+          style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))" }}
+        >
           {/* 1. Statut Mobile / Immobile */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4">
+            <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider block mb-2.5">
               1. Statut de Mobilité du Cortège
             </span>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={() => setCortegeStatus("MOBILE")}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-bold transition-all ${
@@ -1046,88 +1096,99 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* 2. Position Tête */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Flag className="w-3.5 h-3.5" /> 2. Tête de Cortège
-              </span>
-              {headCoords && (
-                <button
-                  onClick={() => setHeadCoords(null)}
-                  className="text-zinc-500 hover:text-red-400 p-1"
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+          {/* 2. Position Tête & 3. Position Fin regroupées de façon compacte et responsive */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+            {/* 2. Position Tête */}
+            <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Flag className="w-3.5 h-3.5" /> 2. Tête de Cortège
+                </span>
+                {headCoords && (
+                  <button
+                    onClick={() => setHeadCoords(null)}
+                    className="text-zinc-500 hover:text-red-400 p-1"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {headCoords ? (
+                <div className="text-xs font-mono text-zinc-300 bg-black/60 p-2 rounded-lg border border-zinc-800">
+                  Lat: {headCoords.lat.toFixed(3)}, Lng: {headCoords.lng.toFixed(3)}
+                </div>
+              ) : (
+                <div className="text-xs text-zinc-500 mb-2">Non positionnée</div>
               )}
+
+              <button
+                onClick={() => {
+                  setPlacementMode("head");
+                  setMobileAdminView("map");
+                  setTimeout(() => mapRef.current?.resize(), 60);
+                }}
+                className={`w-full mt-2 py-2.5 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
+                  placementMode === "head"
+                    ? "bg-cyan-500 text-black border-cyan-400 animate-pulse"
+                    : "bg-zinc-800 hover:bg-zinc-700 text-cyan-300 border-zinc-700"
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {placementMode === "head"
+                  ? "Touchez la carte..."
+                  : "Placer / Déplacer la Tête"}
+              </button>
             </div>
 
-            {headCoords ? (
-              <div className="text-xs font-mono text-zinc-300 bg-black/60 p-2 rounded-lg border border-zinc-800">
-                Lat: {headCoords.lat.toFixed(3)}, Lng: {headCoords.lng.toFixed(3)}
+            {/* 3. Position Fin */}
+            <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Flag className="w-3.5 h-3.5" /> 3. Fin de Cortège
+                </span>
+                {tailCoords && (
+                  <button
+                    onClick={() => setTailCoords(null)}
+                    className="text-zinc-500 hover:text-red-400 p-1"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="text-xs text-zinc-500 mb-2">Non positionnée</div>
-            )}
 
-            <button
-              onClick={() => setPlacementMode("head")}
-              className={`w-full mt-2 py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
-                placementMode === "head"
-                  ? "bg-cyan-500 text-black border-cyan-400 animate-pulse"
-                  : "bg-zinc-800 hover:bg-zinc-700 text-cyan-300 border-zinc-700"
-              }`}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              {placementMode === "head"
-                ? "Cliquez sur la carte pour placer"
-                : "Placer / Déplacer la Tête"}
-            </button>
-          </div>
-
-          {/* 3. Position Fin */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Flag className="w-3.5 h-3.5" /> 3. Fin de Cortège
-              </span>
-              {tailCoords && (
-                <button
-                  onClick={() => setTailCoords(null)}
-                  className="text-zinc-500 hover:text-red-400 p-1"
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+              {tailCoords ? (
+                <div className="text-xs font-mono text-zinc-300 bg-black/60 p-2 rounded-lg border border-zinc-800">
+                  Lat: {tailCoords.lat.toFixed(3)}, Lng: {tailCoords.lng.toFixed(3)}
+                </div>
+              ) : (
+                <div className="text-xs text-zinc-500 mb-2">Non positionnée</div>
               )}
+
+              <button
+                onClick={() => {
+                  setPlacementMode("tail");
+                  setMobileAdminView("map");
+                  setTimeout(() => mapRef.current?.resize(), 60);
+                }}
+                className={`w-full mt-2 py-2.5 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
+                  placementMode === "tail"
+                    ? "bg-orange-500 text-black border-orange-400 animate-pulse"
+                    : "bg-zinc-800 hover:bg-zinc-700 text-orange-300 border-zinc-700"
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {placementMode === "tail"
+                  ? "Touchez la carte..."
+                  : "Placer / Déplacer la Fin"}
+              </button>
             </div>
-
-            {tailCoords ? (
-              <div className="text-xs font-mono text-zinc-300 bg-black/60 p-2 rounded-lg border border-zinc-800">
-                Lat: {tailCoords.lat.toFixed(3)}, Lng: {tailCoords.lng.toFixed(3)}
-              </div>
-            ) : (
-              <div className="text-xs text-zinc-500 mb-2">Non positionnée</div>
-            )}
-
-            <button
-              onClick={() => setPlacementMode("tail")}
-              className={`w-full mt-2 py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
-                placementMode === "tail"
-                  ? "bg-orange-500 text-black border-orange-400 animate-pulse"
-                  : "bg-zinc-800 hover:bg-zinc-700 text-orange-300 border-zinc-700"
-              }`}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              {placementMode === "tail"
-                ? "Cliquez sur la carte pour placer"
-                : "Placer / Déplacer la Fin"}
-            </button>
           </div>
 
           {/* 4. Tracé & Étapes du Cortège (Voirie Dynamique) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Route className="w-3.5 h-3.5" /> 4. Tracé &amp; Étapes ({waypoints.length})
@@ -1148,8 +1209,12 @@ export default function AdminPage() {
             </p>
 
             <button
-              onClick={() => setPlacementMode("waypoint")}
-              className={`w-full py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
+              onClick={() => {
+                setPlacementMode("waypoint");
+                setMobileAdminView("map");
+                setTimeout(() => mapRef.current?.resize(), 60);
+              }}
+              className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
                 placementMode === "waypoint"
                   ? "bg-purple-600 text-white border-purple-400 animate-pulse"
                   : "bg-zinc-800 hover:bg-zinc-700 text-purple-300 border-zinc-700"
@@ -1157,7 +1222,7 @@ export default function AdminPage() {
             >
               <Plus className="w-3.5 h-3.5" />
               {placementMode === "waypoint"
-                ? "Cliquez sur la carte pour ajouter une étape"
+                ? "Touchez la carte pour ajouter une étape"
                 : "+ Ajouter un point d'étape"}
             </button>
 
@@ -1190,41 +1255,47 @@ export default function AdminPage() {
                 disabled={isCalculatingRoute}
                 className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white text-xs font-extrabold rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
               >
-                <Navigation className={`w-3.5 h-3.5 ${isCalculatingRoute ? "animate-spin" : ""}`} />
-                {isCalculatingRoute ? "Calcul piéton en cours..." : "Recalculer le tracé (Mode Piéton / Rues & Places)"}
+                <Navigation className={`w-3.5 h-3.5 shrink-0 ${isCalculatingRoute ? "animate-spin" : ""}`} />
+                <span>
+                  {isCalculatingRoute ? "Calcul piéton en cours..." : "Recalculer le tracé piéton"}
+                </span>
               </button>
 
               <button
                 onClick={handleManualSyncGitHub}
                 disabled={isSyncingGithub || routeCoordinates.length < 2}
                 className="w-full py-2 px-3 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center justify-center gap-1.5"
-                title="Pousser immédiatement dans src/config/cities/nantes.json sur GitHub et déclencher le build GitHub Pages"
+                title="Pousser immédiatement dans src/config/cities/nantes.json sur GitHub"
               >
-                <GitCommit className={`w-3.5 h-3.5 ${isSyncingGithub ? "animate-spin" : ""}`} />
-                {isSyncingGithub ? "Mise à jour GitHub en cours..." : "Pousser dans nantes.json sur GitHub"}
+                <GitCommit className={`w-3.5 h-3.5 shrink-0 ${isSyncingGithub ? "animate-spin" : ""}`} />
+                <span>
+                  {isSyncingGithub ? "Mise à jour GitHub..." : "Pousser dans nantes.json (GitHub)"}
+                </span>
               </button>
 
-              <button
-                onClick={handleCopyGeoJsonCoordinates}
-                className="w-full py-1.5 px-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
-                title="Copier les coordonnées pour mise à jour permanente dans nantes.json"
-              >
-                <Copy className="w-3 h-3 text-cyan-400" />
-                {hasCopiedGeoJson ? "✅ Coordonnées copiées (JSON) !" : "Copier les coordonnées pour nantes.json"}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleCopyGeoJsonCoordinates}
+                  className="py-2 px-2.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1"
+                  title="Copier les coordonnées JSON"
+                >
+                  <Copy className="w-3 h-3 text-cyan-400 shrink-0" />
+                  <span className="truncate">{hasCopiedGeoJson ? "Copié !" : "Copier JSON"}</span>
+                </button>
 
-              <button
-                onClick={handleResetRoute}
-                className="w-full py-1.5 px-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Rétablir le tracé déclaré initial
-              </button>
+                <button
+                  onClick={handleResetRoute}
+                  className="py-2 px-2.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[11px] font-semibold rounded-xl border border-zinc-700 transition-colors flex items-center justify-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3 shrink-0" />
+                  <span className="truncate">Tracé initial</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* 5. Chiffres Officiels du Jour (Observatoire « Bataille des Chiffres ») */}
-          <div className="bg-zinc-900 border border-indigo-500/30 rounded-2xl p-4 space-y-3">
+          {/* 5. Chiffres Officiels du Jour */}
+          <div className="bg-zinc-900/90 border border-indigo-500/30 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                 <BarChart3 className="w-3.5 h-3.5" /> 5. Chiffres du Jour (Observatoire)
@@ -1247,10 +1318,10 @@ export default function AdminPage() {
             </div>
 
             <p className="text-[11px] text-zinc-400 leading-snug">
-              Diffusez en direct (signé Ed25519 + sauvegardé dans <code className="text-cyan-400 font-mono">nantes.json</code>) les chiffres officiels du jour dans l&apos;Observatoire public « Bataille des Chiffres ».
+              Diffusez en direct (signé Ed25519 + sauvegardé dans <code className="text-cyan-400 font-mono">nantes.json</code>) les estimations du jour.
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div>
                 <label className="block text-[10px] font-mono text-zinc-400 uppercase mb-1">
                   Intitulé / Mouvement du jour (optionnel)
@@ -1261,7 +1332,7 @@ export default function AdminPage() {
                   onChange={(e) => setMobilisationLabel(e.target.value)}
                   placeholder="Ex: Mobilisation intersyndicale Nantes"
                   maxLength={140}
-                  className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-400"
+                  className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-400"
                 />
               </div>
 
@@ -1277,7 +1348,7 @@ export default function AdminPage() {
                     value={policeCountInput}
                     onChange={(e) => setPoliceCountInput(e.target.value)}
                     placeholder="Ex: 15000"
-                    className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-sky-400 font-mono"
+                    className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-sky-400 font-mono"
                   />
                 </div>
 
@@ -1292,7 +1363,7 @@ export default function AdminPage() {
                     value={unionCountInput}
                     onChange={(e) => setUnionCountInput(e.target.value)}
                     placeholder="Ex: 42000"
-                    className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-rose-400 font-mono"
+                    className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-rose-400 font-mono"
                   />
                 </div>
               </div>
@@ -1308,14 +1379,14 @@ export default function AdminPage() {
                   value={thirdPartyCountInput}
                   onChange={(e) => setThirdPartyCountInput(e.target.value)}
                   placeholder="Ex: 28000"
-                  className="w-full px-3 py-1.5 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 font-mono"
+                  className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 font-mono"
                 />
               </div>
 
               {policeCountInput &&
                 unionCountInput &&
                 parseInt(policeCountInput, 10) > 0 && (
-                  <div className="p-2 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-[11px] font-mono text-indigo-300 flex items-center justify-between">
+                  <div className="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-[11px] font-mono text-indigo-300 flex items-center justify-between">
                     <span>Ratio calculé :</span>
                     <span className="font-bold text-amber-300">
                       {(
@@ -1335,31 +1406,30 @@ export default function AdminPage() {
           </div>
 
           {/* 6. Synchronisation Automatique GitHub (nantes.json) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                <GitCommit className="w-3.5 h-3.5 text-purple-400" /> 6. Auto-Commit GitHub (nantes.json)
+                <GitCommit className="w-3.5 h-3.5 text-purple-400 shrink-0" /> 6. Auto-Commit GitHub
               </span>
               {githubToken ? (
-                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-mono flex items-center gap-1">
+                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[9px] text-emerald-400 font-mono flex items-center gap-1 shrink-0">
                   <CheckCircle2 className="w-3 h-3" /> Configuré
                 </span>
               ) : (
-                <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-[9px] text-zinc-400 font-mono">
+                <span className="px-1.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-[9px] text-zinc-400 font-mono shrink-0">
                   Non configuré
                 </span>
               )}
             </div>
 
             <p className="text-[11px] text-zinc-400 leading-snug">
-              Met à jour automatiquement <code className="text-cyan-400 font-mono">nantes.json</code> sur GitHub dès la diffusion pour que l&apos;itinéraire persiste pour tous les manifestants qui rechargent l&apos;application.
+              Met à jour automatiquement <code className="text-cyan-400 font-mono">nantes.json</code> sur GitHub dès la diffusion.
             </p>
 
-            {/* Champ Token GitHub */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label htmlFor="gh-token-input" className="text-[11px] font-medium text-zinc-400">
-                  Token GitHub (PAT avec accès contents:write)
+                  Token GitHub (PAT contents:write)
                 </label>
                 <button
                   type="button"
@@ -1370,25 +1440,22 @@ export default function AdminPage() {
                   {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              <div className="relative">
-                <input
-                  id="gh-token-input"
-                  type={showToken ? "text" : "password"}
-                  value={githubToken}
-                  onChange={(e) => handleUpdateGhToken(e.target.value)}
-                  placeholder="github_pat_... ou ghp_..."
-                  className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400 font-mono"
-                />
-              </div>
+              <input
+                id="gh-token-input"
+                type={showToken ? "text" : "password"}
+                value={githubToken}
+                onChange={(e) => handleUpdateGhToken(e.target.value)}
+                placeholder="github_pat_... ou ghp_..."
+                className="w-full px-3 py-2 bg-black border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-purple-400 font-mono"
+              />
             </div>
 
-            {/* Bouton de test du token */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={handleTestToken}
                 disabled={isTestingToken || !githubToken.trim()}
-                className="py-1 px-2.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-[11px] font-semibold rounded-lg border border-zinc-700 transition-colors flex items-center gap-1"
+                className="py-1.5 px-3 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 text-[11px] font-semibold rounded-lg border border-zinc-700 transition-colors flex items-center gap-1"
               >
                 <RefreshCw className={`w-3 h-3 ${isTestingToken ? "animate-spin" : ""}`} />
                 Tester la connexion
@@ -1409,18 +1476,16 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Case à cocher auto-commit */}
-            <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-zinc-800 text-[11px] text-zinc-300 select-none">
+            <label className="flex items-center gap-2 cursor-pointer pt-2 border-t border-zinc-800 text-[11px] text-zinc-300 select-none">
               <input
                 type="checkbox"
                 checked={autoCommitGithub}
                 onChange={(e) => handleToggleAutoCommit(e.target.checked)}
-                className="w-3.5 h-3.5 rounded bg-black border-zinc-700 text-purple-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                className="w-3.5 h-3.5 rounded bg-black border-zinc-700 text-purple-600 focus:ring-0 focus:ring-offset-0 cursor-pointer shrink-0"
               />
               <span>Auto-commit GitHub à chaque clic sur &laquo; Signer &amp; Diffuser &raquo;</span>
             </label>
 
-            {/* Statut du dernier commit */}
             {githubSyncResult && (
               <div className={`p-2.5 rounded-xl border text-[11px] font-mono ${githubSyncResult.success ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-300" : "bg-red-950/40 border-red-500/30 text-red-300"}`}>
                 {githubSyncResult.success ? (
@@ -1442,9 +1507,6 @@ export default function AdminPage() {
                         </a>
                       )}
                     </div>
-                    <p className="text-[9px] text-emerald-400/80 font-sans">
-                      🚀 Déploiement automatique GitHub Pages lancé.
-                    </p>
                   </div>
                 ) : (
                   <div className="flex items-start gap-1.5">
@@ -1473,16 +1535,56 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* Panel droit : Carte */}
-        <div className="md:col-span-2 relative min-h-[350px]">
+        {/* Panel droit : Carte interactive pleine hauteur */}
+        <div
+          className={`lg:col-span-7 xl:col-span-8 relative h-full min-h-[360px] ${
+            mobileAdminView === "controls" ? "hidden lg:block" : "block"
+          }`}
+        >
           <div ref={mapContainerRef} className="w-full h-full" />
+
           {placementMode && (
-            <div className="absolute top-4 left-4 right-4 z-20 bg-blue-600 text-white p-2.5 rounded-xl text-center text-xs font-bold shadow-2xl animate-pulse">
-              {placementMode === "head" && "Touchez un point sur la carte pour placer la Tête de cortège"}
-              {placementMode === "tail" && "Touchez un point sur la carte pour placer la Fin de cortège"}
-              {placementMode === "waypoint" && "Touchez un point sur la carte pour ajouter un Point d'étape"}
+            <div className="absolute top-3 left-3 right-3 z-20 bg-blue-600/95 backdrop-blur-md border border-blue-400 text-white px-3.5 py-2.5 rounded-2xl text-center text-xs font-bold shadow-2xl flex items-center justify-between gap-2">
+              <span className="truncate">
+                {placementMode === "head" && "🚩 Touchez la carte pour placer la Tête"}
+                {placementMode === "tail" && "🏁 Touchez la carte pour placer la Fin"}
+                {placementMode === "waypoint" && "📍 Touchez la carte pour ajouter une Étape"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPlacementMode(null)}
+                className="px-2 py-1 rounded-lg bg-black/30 hover:bg-black/50 text-[10px] font-mono shrink-0"
+              >
+                Annuler
+              </button>
             </div>
           )}
+
+          {/* Boutons flottants rapides sur mobile quand on est sur la carte */}
+          <div
+            className="lg:hidden absolute bottom-5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
+          >
+            <button
+              type="button"
+              onClick={() => setMobileAdminView("controls")}
+              className="pointer-events-auto px-3.5 py-2.5 rounded-2xl bg-zinc-950/90 border border-zinc-700 text-white text-xs font-bold shadow-2xl flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Retour aux réglages</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPlacementMode("waypoint");
+              }}
+              className="pointer-events-auto px-3.5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-2xl flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Étape</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -55,25 +55,27 @@ export function WindBadge({ windData, isLoading, onRefresh, onClose }: WindBadge
     <>
       {/* 1. Pillule HUD minimaliste et discrète sous la barre de filtres */}
       <div
-        className="absolute left-3 sm:left-4 z-20 pointer-events-auto select-none animate-in fade-in duration-200"
-        style={{ top: "calc(max(8px, env(safe-area-inset-top, 8px)) + 108px)" }}
+        className="absolute left-0 right-0 z-20 pointer-events-none select-none animate-in fade-in duration-200 px-2.5 sm:px-4"
+        style={{ top: "calc(max(10px, env(safe-area-inset-top, 10px)) + 118px)" }}
       >
-        <div
-          onClick={() => setIsExpanded(true)}
-          className="group cursor-pointer bg-black/85 hover:bg-zinc-950 backdrop-blur-md border border-zinc-800 hover:border-cyan-500/40 rounded-full px-3 py-1.5 shadow-lg transition-all flex items-center gap-2 text-zinc-200"
-          title="Détails du vent et dispersion"
-        >
-          <span className="text-cyan-300/90 flex items-center justify-center">
-            <MinimalWindArrow deg={windData ? windData.blowToDeg : 0} size={16} />
-          </span>
-          <span className="text-[11px] font-bold text-white tracking-tight">
-            {isLoading ? "..." : `${windData?.speedKmh} km/h`}
-          </span>
-          {windData && (
-            <span className="text-[10px] text-zinc-400 font-mono">
-              {windData.cardinalFrom} → {windData.cardinalTo}
+        <div className="max-w-5xl mx-auto flex justify-start">
+          <div
+            onClick={() => setIsExpanded(true)}
+            className="pointer-events-auto group cursor-pointer bg-zinc-950/90 hover:bg-zinc-900 backdrop-blur-md border border-zinc-800 hover:border-cyan-500/40 rounded-full px-3.5 py-1.5 shadow-lg transition-all flex items-center gap-2 text-zinc-200"
+            title="Détails du vent et dispersion"
+          >
+            <span className="text-cyan-300/90 flex items-center justify-center">
+              <MinimalWindArrow deg={windData ? windData.blowToDeg : 0} size={16} />
             </span>
-          )}
+            <span className="text-[11px] font-bold text-white tracking-tight">
+              {isLoading ? "..." : `${windData?.speedKmh} km/h`}
+            </span>
+            {windData && (
+              <span className="text-[10px] text-zinc-400 font-mono">
+                {windData.cardinalFrom} → {windData.cardinalTo}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
