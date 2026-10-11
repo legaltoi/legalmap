@@ -444,7 +444,7 @@ export function MapView({
         });
       }
 
-      // 2. Calque « Topographie Tactique & Mémoire des Lieux » (Carnet 2 : 8 zones)
+      // 2. Calque « Topographie Tactique & Mémoire des Lieux » (Carnet 2 : 8 contours architecturaux OSM)
       if (!map.getSource("tactical-sectors-source")) {
         map.addSource("tactical-sectors-source", {
           type: "geojson",
@@ -457,7 +457,19 @@ export function MapView({
           source: "tactical-sectors-source",
           paint: {
             "fill-color": ["get", "color"],
-            "fill-opacity": 0.16,
+            "fill-opacity": 0.06,
+          },
+        });
+
+        map.addLayer({
+          id: "tactical-sectors-glow",
+          type: "line",
+          source: "tactical-sectors-source",
+          paint: {
+            "line-color": ["get", "color"],
+            "line-width": 4,
+            "line-opacity": 0.14,
+            "line-blur": 2.5,
           },
         });
 
@@ -467,10 +479,27 @@ export function MapView({
           source: "tactical-sectors-source",
           paint: {
             "line-color": ["get", "color"],
-            "line-width": 2,
-            "line-opacity": 0.8,
-            "line-dasharray": [3, 2],
+            "line-width": 1,
+            "line-opacity": 0.48,
+            "line-dasharray": [2, 2.5],
           },
+        });
+
+        map.on("click", "tactical-sectors-fill", (e) => {
+          const feat = e.features?.[0];
+          const secId = feat?.properties?.id;
+          if (!secId) return;
+          const found = CARNET_2_SECTORS.find((s) => s.id === secId);
+          if (found) {
+            setSelectedTacticalSector(found);
+          }
+        });
+
+        map.on("mouseenter", "tactical-sectors-fill", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "tactical-sectors-fill", () => {
+          map.getCanvas().style.cursor = "";
         });
       }
 
@@ -736,11 +765,20 @@ export function MapView({
           const el = document.createElement("div");
           el.className = "tactical-sector-marker cursor-pointer z-20";
           el.innerHTML = `
-            <div class="group transition-transform duration-150 hover:scale-110">
-              <div class="px-2 py-0.5 rounded-full bg-black/90 backdrop-blur-md border shadow-lg flex items-center gap-1 text-[10px] font-bold text-white whitespace-nowrap" style="border-color: ${sec.color}; box-shadow: 0 0 10px ${sec.color}44;">
-                <span>${sec.icon}</span>
+            <div class="group flex flex-col items-center gap-0.5 transition-all duration-200 opacity-85 hover:opacity-100 hover:scale-105">
+              <div class="relative flex items-center justify-center w-5 h-5">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="overflow-visible">
+                  <circle cx="10" cy="10" r="7.5" stroke="${sec.color}" stroke-width="0.9" stroke-opacity="0.45" stroke-dasharray="2 2" fill="${sec.color}" fill-opacity="0.08" />
+                  <line x1="10" y1="0.5" x2="10" y2="3.2" stroke="${sec.color}" stroke-width="0.9" stroke-opacity="0.6" stroke-linecap="round" />
+                  <line x1="10" y1="16.8" x2="10" y2="19.5" stroke="${sec.color}" stroke-width="0.9" stroke-opacity="0.6" stroke-linecap="round" />
+                  <line x1="0.5" y1="10" x2="3.2" y2="10" stroke="${sec.color}" stroke-width="0.9" stroke-opacity="0.6" stroke-linecap="round" />
+                  <line x1="16.8" y1="10" x2="19.5" y2="10" stroke="${sec.color}" stroke-width="0.9" stroke-opacity="0.6" stroke-linecap="round" />
+                  <circle cx="10" cy="10" r="2.2" fill="${sec.color}" fill-opacity="0.95" />
+                </svg>
+              </div>
+              <div class="px-1.5 py-[1px] rounded bg-zinc-950/75 backdrop-blur-md border border-white/10 group-hover:border-white/25 flex items-center gap-1 text-[8.5px] font-mono font-medium tracking-wider uppercase text-zinc-200/90 group-hover:text-white whitespace-nowrap shadow-sm">
+                <span class="w-1 h-1 rounded-full shrink-0" style="background-color: ${sec.color};"></span>
                 <span>${sec.shortName}</span>
-                <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${sec.color};"></span>
               </div>
             </div>
           `;
