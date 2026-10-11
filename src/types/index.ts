@@ -7,7 +7,8 @@ export type ReportCategory =
   | "ZONE_GAZ"
   | "VOIE_BLOQUEE"
   | "POINT_BLOCAGE"
-  | "SECOURS_MEDIC";
+  | "SECOURS_MEDIC"
+  | "BLOCUS_LYCEE";
 
 export interface ReportCategoryMetadata {
   id: ReportCategory;
@@ -17,8 +18,9 @@ export interface ReportCategoryMetadata {
   color: string;
   badgeBg: string;
   borderColor: string;
-  iconName: "alert-triangle" | "ban" | "users" | "cross";
+  iconName: "alert-triangle" | "ban" | "users" | "cross" | "school";
   legalRationale: string;
+  minThreshold?: number; // Seuil spécifique (ex: 5 signalements pour un blocus de lycée)
 }
 
 /**
@@ -38,7 +40,7 @@ export interface ReportEvent {
 
 /**
  * Marqueur consolidé par l'algorithme de consensus spatio-temporel
- * N'apparaît sur la carte publique que si >= MIN_REPORTS_THRESHOLD (ex: 2 ou 3)
+ * N'apparaît validé sur la carte publique que si >= seuil de la catégorie (2 ou 5 pour blocus lycée)
  */
 export interface ConsensusMarker {
   id: string;
@@ -46,11 +48,12 @@ export interface ConsensusMarker {
   lat: number;
   lng: number;
   reportCount: number;
+  requiredReports?: number; // Seuil requis (2 par défaut, 5 pour BLOCUS_LYCEE)
   firstReportTime: number;
   lastReportTime: number;
   expiresAt: number; // Timestamp d'expiration automatique (TTL)
   ttlDurationMs: number; // Durée totale du TTL (ex: 300_000ms ou 600_000ms)
-  isPending?: boolean; // Marqueur en attente de corroboration (1 signalement)
+  isPending?: boolean; // Marqueur en attente de corroboration (< seuil)
 }
 
 /**

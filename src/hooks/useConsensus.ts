@@ -81,15 +81,23 @@ export function useConsensus({
       }
 
       const reportCount = cluster.reports.length;
+      const requiredReports =
+        cluster.category === "BLOCUS_LYCEE"
+          ? CONSENSUS_CONFIG.BLOCUS_REPORTS_THRESHOLD
+          : threshold;
+      const clusterTtl =
+        cluster.category === "BLOCUS_LYCEE"
+          ? CONSENSUS_CONFIG.TTL_BLOCUS_MS
+          : currentTtl;
 
-      // 2. Vérification du seuil de consensus (>= 2 ou 3)
-      if (reportCount >= threshold) {
+      // 2. Vérification du seuil de consensus (2 pour alertes rue, 5 pour blocus lycée)
+      if (reportCount >= requiredReports) {
         if (!cluster.validatedAt) {
           cluster.validatedAt = now;
         }
 
         // Le TTL démarre ou est prolongé par le dernier rapport reçu
-        const expiresAt = cluster.lastReportTime + currentTtl;
+        const expiresAt = cluster.lastReportTime + clusterTtl;
 
         // Si le délai TTL est écoulé, on détruit immédiatement le marqueur sans laisser de trace
         if (now >= expiresAt) {
@@ -103,13 +111,14 @@ export function useConsensus({
           lat: cluster.centroid.lat,
           lng: cluster.centroid.lng,
           reportCount,
+          requiredReports,
           firstReportTime: cluster.firstReportTime,
           lastReportTime: cluster.lastReportTime,
           expiresAt,
-          ttlDurationMs: currentTtl,
+          ttlDurationMs: clusterTtl,
         });
       } else {
-        // En attente de corroboration (1 signalement) : affiché en mode préventif indicatif
+        // En attente de corroboration (< seuil, ex: 1..4/5 pour blocus lycée)
         pendingReportsTotal += reportCount;
         validPublicList.push({
           id: cluster.id,
@@ -117,6 +126,7 @@ export function useConsensus({
           lat: cluster.centroid.lat,
           lng: cluster.centroid.lng,
           reportCount,
+          requiredReports,
           firstReportTime: cluster.firstReportTime,
           lastReportTime: cluster.lastReportTime,
           expiresAt: cluster.lastReportTime + CONSENSUS_CONFIG.SLIDING_WINDOW_MS,

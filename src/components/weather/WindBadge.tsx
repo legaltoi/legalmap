@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Wind, Navigation2, RefreshCw, X, ShieldAlert, Thermometer, Compass, ChevronRight } from "lucide-react";
+import { Wind, RefreshCw, X, ShieldAlert, Thermometer } from "lucide-react";
 import { WindData } from "@/services/weatherService";
 
 interface WindBadgeProps {
@@ -11,6 +11,41 @@ interface WindBadgeProps {
   onClose?: () => void;
 }
 
+/**
+ * Aiguille de vent SVG minimaliste et fine
+ */
+function MinimalWindArrow({ deg, size = 18 }: { deg: number; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className="transition-transform duration-500 ease-out"
+      style={{ transform: `rotate(${deg}deg)` }}
+    >
+      <line
+        x1="12"
+        y1="20"
+        x2="12"
+        y2="4.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeOpacity="0.85"
+      />
+      <path
+        d="M8.5 8.5L12 4L15.5 8.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="20" r="1.4" fill="currentColor" fillOpacity="0.45" />
+    </svg>
+  );
+}
+
 export function WindBadge({ windData, isLoading, onRefresh, onClose }: WindBadgeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -18,157 +53,114 @@ export function WindBadge({ windData, isLoading, onRefresh, onClose }: WindBadge
 
   return (
     <>
-      {/* 1. Badge HUD compact flottant sur la carte */}
+      {/* 1. Pillule HUD minimaliste et discrète sur la carte */}
       <div className="absolute top-28 left-3 sm:left-4 z-20 pointer-events-auto select-none animate-in fade-in duration-200">
         <div
           onClick={() => setIsExpanded(true)}
-          className="group cursor-pointer bg-black/90 hover:bg-zinc-950 active:scale-[0.98] backdrop-blur-xl border border-cyan-500/40 hover:border-cyan-400 rounded-2xl p-2.5 shadow-2xl transition-all flex items-center gap-2.5 max-w-xs text-zinc-100"
-          title="Cliquez pour voir les détails de dispersion du vent"
+          className="group cursor-pointer bg-black/80 hover:bg-zinc-950/90 backdrop-blur-md border border-zinc-800 hover:border-cyan-500/40 rounded-full px-3 py-1.5 shadow-lg transition-all flex items-center gap-2 text-zinc-200"
+          title="Détails du vent et dispersion"
         >
-          {/* Boussole rotative montrant la direction de souffle */}
-          <div className="relative w-9 h-9 rounded-xl bg-cyan-950/60 border border-cyan-500/40 flex items-center justify-center shrink-0 shadow-inner">
-            <div
-              className="transition-transform duration-500 ease-out"
-              style={{
-                transform: `rotate(${windData ? windData.blowToDeg : 0}deg)`,
-              }}
-            >
-              <Navigation2 className="w-5 h-5 text-cyan-400 fill-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-            </div>
-            <span className="sr-only">Direction : {windData?.blowToDeg}°</span>
-          </div>
-
-          {/* Informations principales */}
-          <div className="leading-tight pr-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-white tracking-tight">
-                {isLoading ? "Actualisation..." : `${windData?.speedKmh} km/h`}
-              </span>
-              {windData && (
-                <span className="text-[10px] text-cyan-300 font-mono font-bold bg-cyan-950/60 px-1 py-0.2 rounded border border-cyan-500/30">
-                  {windData.cardinalFrom}
-                </span>
-              )}
-            </div>
-            <div className="text-[10px] text-zinc-400 font-medium flex items-center gap-1 mt-0.5">
-              <span className="text-zinc-300">Souffle :</span>
-              <span className="text-cyan-400 font-mono font-bold">{windData?.cardinalTo}</span>
-              <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </div>
+          <span className="text-cyan-300/90 flex items-center justify-center">
+            <MinimalWindArrow deg={windData ? windData.blowToDeg : 0} size={16} />
+          </span>
+          <span className="text-[11px] font-bold text-white tracking-tight">
+            {isLoading ? "..." : `${windData?.speedKmh} km/h`}
+          </span>
+          {windData && (
+            <span className="text-[10px] text-zinc-400 font-mono">
+              {windData.cardinalFrom} → {windData.cardinalTo}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* 2. Modale / Fiche tactique détaillée au clic */}
+      {/* 2. Fiche minimaliste au clic */}
       {isExpanded && windData && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-150"
           onClick={() => setIsExpanded(false)}
         >
           <div
-            className="w-full max-w-sm bg-[#0a0a0d] border border-cyan-500/40 rounded-3xl p-5 shadow-2xl text-zinc-100 flex flex-col gap-4 animate-in slide-in-from-bottom-2 duration-200"
+            className="w-full max-w-xs bg-[#0b0b0f] border border-zinc-800 rounded-3xl p-4 shadow-2xl text-zinc-100 flex flex-col gap-3"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-cyan-500/15 border border-cyan-500/30 rounded-2xl text-cyan-400">
-                  <Wind className="w-5 h-5 animate-pulse" />
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-cyan-400">
+                  <MinimalWindArrow deg={windData.blowToDeg} size={20} />
+                </span>
                 <div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                    Vent &amp; Dispersion en direct
+                  <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                    Vent en direct • Nantes
                   </h3>
-                  <p className="text-[11px] text-zinc-400 font-mono">{windData.source}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono">{windData.source}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsExpanded(false)}
-                className="p-1.5 text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 rounded-xl transition-colors"
+                className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-900"
                 aria-label="Fermer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Vitesse & Direction */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="bg-[#121217] border border-zinc-800 rounded-2xl p-3 flex flex-col justify-between">
-                <span className="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">Vitesse Moyenne</span>
-                <div className="text-xl font-black text-white mt-1">
-                  {windData.speedKmh} <span className="text-xs font-normal text-zinc-400">km/h</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-zinc-900/80 border border-zinc-800/90 rounded-2xl p-2.5">
+                <span className="text-[9px] text-zinc-500 font-mono uppercase">Vitesse</span>
+                <div className="text-base font-black text-white mt-0.5">
+                  {windData.speedKmh} <span className="text-[10px] font-normal text-zinc-400">km/h</span>
                 </div>
-                <div className="text-[10px] text-cyan-300 font-mono mt-1">
-                  Rafales : {windData.gustsKmh} km/h
+                <div className="text-[10px] text-zinc-400 font-mono">
+                  Rafales {windData.gustsKmh} km/h
                 </div>
               </div>
 
-              <div className="bg-[#121217] border border-zinc-800 rounded-2xl p-3 flex flex-col justify-between">
-                <span className="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">Axe du Souffle</span>
-                <div className="text-lg font-black text-cyan-400 mt-1 flex items-center gap-1.5">
-                  <div
-                    className="w-4 h-4 transition-transform inline-block"
-                    style={{ transform: `rotate(${windData.blowToDeg}deg)` }}
-                  >
-                    <Navigation2 className="w-4 h-4 text-cyan-400 fill-cyan-400" />
-                  </div>
-                  <span>{windData.blowToDeg}°</span>
+              <div className="bg-zinc-900/80 border border-zinc-800/90 rounded-2xl p-2.5">
+                <span className="text-[9px] text-zinc-500 font-mono uppercase">Souffle vers</span>
+                <div className="text-base font-black text-cyan-300 mt-0.5">
+                  {windData.cardinalTo} ({windData.blowToDeg}°)
                 </div>
-                <div className="text-[10px] text-zinc-400 font-mono mt-1">
-                  {windData.cardinalFrom} ➔ {windData.cardinalTo}
+                <div className="text-[10px] text-zinc-400 font-mono">
+                  Vient de {windData.cardinalFrom}
                 </div>
               </div>
             </div>
 
-            {/* Fiche tactique : Propagation des Gaz Lacrymogènes */}
-            <div className="bg-gradient-to-br from-amber-950/40 via-zinc-900 to-black border border-amber-500/40 rounded-2xl p-3.5 space-y-2">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="text-xs font-black text-amber-300 uppercase tracking-wide">
-                  Impact Sanitaire : Gaz Lacrymogène
-                </span>
-              </div>
-              <p className="text-xs text-zinc-200 leading-relaxed">
-                {windData.gasAdvice}
-              </p>
-              <div className="pt-1 flex items-center justify-between text-[10px] text-zinc-400 font-mono">
-                <span>Échelle Beaufort : {windData.beaufortScale}/12</span>
-                <span className="text-amber-400 font-bold">{windData.beaufortDescription}</span>
-              </div>
+            <div className="bg-amber-950/20 border border-amber-500/30 rounded-2xl p-2.5 text-[11px] text-zinc-300 leading-relaxed">
+              <span className="text-amber-300 font-bold">⚠️ Gaz : </span>
+              {windData.gasAdvice}
             </div>
 
-            {/* Température & Horodatage */}
-            <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono px-1">
+            <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
               <span className="flex items-center gap-1">
-                <Thermometer className="w-3.5 h-3.5 text-rose-400" />
-                {windData.temperatureC} °C à Nantes
+                <Thermometer className="w-3 h-3 text-rose-400" />
+                {windData.temperatureC} °C
               </span>
-              <span>
-                Sync {new Date(windData.updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-1 border-t border-zinc-800">
-              {onRefresh && (
-                <button
-                  onClick={onRefresh}
-                  className="flex-1 py-2 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-95 border border-zinc-700 text-zinc-200 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                  <span>Actualiser le vent</span>
-                </button>
-              )}
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="py-2 px-3 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold transition-colors"
-                >
-                  Masquer
-                </button>
-              )}
+              <div className="flex items-center gap-1.5">
+                {onRefresh && (
+                  <button
+                    onClick={onRefresh}
+                    className="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Actualiser
+                  </button>
+                )}
+                {onClose && (
+                  <button
+                    onClick={() => {
+                      setIsExpanded(false);
+                      onClose();
+                    }}
+                    className="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800"
+                  >
+                    Masquer
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

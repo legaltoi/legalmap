@@ -6,9 +6,7 @@ import { HeaderBar } from "@/components/HeaderBar";
 import { ActionDock } from "@/components/ActionDock";
 import { LegalSheet } from "@/components/LegalSheet";
 import { LegalNotice } from "@/components/LegalNotice";
-import { SocialFeedModal } from "@/components/feed/SocialFeedModal";
 import { ObservatoryModal, ObservatoryTab } from "@/components/observatory/ObservatoryModal";
-import { Toolbar } from "@/components/layout/Toolbar";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
 import { CortegeState, ReportCategory } from "@/types";
@@ -78,7 +76,6 @@ export default function HomePage() {
   // Modales d'information
   const [isLegalSheetOpen, setIsLegalSheetOpen] = useState(false);
   const [isLegalNoticeOpen, setIsLegalNoticeOpen] = useState(false);
-  const [isSocialFeedOpen, setIsSocialFeedOpen] = useState(false);
   const [isObservatoryOpen, setIsObservatoryOpen] = useState(false);
   const [observatoryInitialTab, setObservatoryInitialTab] = useState<ObservatoryTab>("route");
 
@@ -108,7 +105,7 @@ export default function HomePage() {
   // Mode de pointage direct sur carte
   const [activeCategoryToPoint, setActiveCategoryToPoint] = useState<ReportCategory | null>(null);
 
-  // 1. Moteur de consensus spatio-temporel (Rayon 100m, seuil 2-3, TTL dynamique 5/10 min)
+  // 1. Moteur de consensus spatio-temporel (Rayon 100m, seuil 2 pour rue / 5 pour blocus lycée)
   const { publicMarkers, pendingCount, addIncomingReport } = useConsensus({
     cortegeStatus: cortegeState.status,
   });
@@ -187,10 +184,8 @@ export default function HomePage() {
         pendingCount={pendingCount}
         onOpenLegalSheet={() => setIsLegalSheetOpen(true)}
         onOpenLegalNotice={() => setIsLegalNoticeOpen(true)}
-        onOpenSocialFeed={() => setIsSocialFeedOpen(true)}
         onOpenObservatory={() => handleOpenObservatory("stats")}
         onRecenterCity={() => {
-          // Rechargement doux de la vue centre
           const event = new CustomEvent("recenter-nantes");
           window.dispatchEvent(event);
         }}
@@ -204,6 +199,7 @@ export default function HomePage() {
           userLocation={userLocation}
           isMapSelectActive={Boolean(activeCategoryToPoint)}
           onMapClickReport={handleMapClick}
+          onTriggerReport={handleTriggerReport}
           onUserLocationFound={(coords) => setUserLocation(coords)}
           isTacticalLayerEnabled={isTacticalLayerEnabled}
           onToggleTacticalLayer={handleToggleTacticalLayer}
@@ -211,24 +207,17 @@ export default function HomePage() {
         />
       </div>
 
-      {/* 3. Toolbar d'action tactile : Flux Live #ManifNantes */}
-      <div className="fixed right-3 bottom-44 sm:bottom-40 z-20 pointer-events-auto">
-        <Toolbar
-          onToggleSocialFeed={() => setIsSocialFeedOpen((prev) => !prev)}
-          isSocialFeedOpen={isSocialFeedOpen}
-        />
-      </div>
-
-      {/* 4. Barre d'action rapide tactile (4 boutons légaux normalisés) */}
+      {/* 3. Barre d'action rapide tactile (Gaz, Voie Bloquée, Blocage, Blocus Lycée, Médic) */}
       <ActionDock
         onTriggerReport={handleTriggerReport}
         userLocation={userLocation}
         onSelectMapLocationMode={handleSelectMapMode}
         isMapSelectActive={Boolean(activeCategoryToPoint)}
         isSolvingPoW={isSolvingPoW}
+        consensusMarkers={publicMarkers}
       />
 
-      {/* 5. Modales d'information, Observatoire (Carnets 1-3) et Flux Social */}
+      {/* 4. Modales d'information et Observatoire (Carnets 1-3) */}
       <LegalSheet
         isOpen={isLegalSheetOpen}
         onClose={() => setIsLegalSheetOpen(false)}
@@ -237,11 +226,6 @@ export default function HomePage() {
       <LegalNotice
         isOpen={isLegalNoticeOpen}
         onClose={() => setIsLegalNoticeOpen(false)}
-      />
-
-      <SocialFeedModal
-        isOpen={isSocialFeedOpen}
-        onClose={() => setIsSocialFeedOpen(false)}
       />
 
       <ObservatoryModal

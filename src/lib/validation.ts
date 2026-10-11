@@ -32,6 +32,7 @@ export const ReportEventSchema = z
       "VOIE_BLOQUEE",
       "POINT_BLOCAGE",
       "SECOURS_MEDIC",
+      "BLOCUS_LYCEE",
     ] as const),
     lat: z
       .number()

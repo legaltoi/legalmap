@@ -24,7 +24,6 @@ interface HeaderBarProps {
   onOpenLegalSheet: () => void;
   onOpenLegalNotice: () => void;
   onRecenterCity: () => void;
-  onOpenSocialFeed?: () => void;
   onOpenObservatory?: () => void;
 }
 
@@ -35,7 +34,6 @@ export function HeaderBar({
   onOpenLegalSheet,
   onOpenLegalNotice,
   onRecenterCity,
-  onOpenSocialFeed,
   onOpenObservatory,
 }: HeaderBarProps) {
   const getStatusBadge = () => {
@@ -124,7 +122,7 @@ export function HeaderBar({
           {pendingCount > 0 && (
             <div
               className="text-[10px] text-zinc-400 font-mono bg-zinc-900 px-2 py-0.5 rounded-full border border-zinc-800"
-              title="Signalements individuels en attente d'un 2ème rapport de consensus dans les 100m"
+              title="Signalements individuels en attente de consensus"
             >
               {pendingCount} en validation
             </div>
@@ -145,22 +143,6 @@ export function HeaderBar({
               <BarChart3 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Infos &amp; Chiffres</span>
               <span className="sm:hidden">Infos</span>
-            </button>
-          )}
-
-          {/* Bouton Flux Live X / #ManifNantes */}
-          {onOpenSocialFeed && (
-            <button
-              onClick={onOpenSocialFeed}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold transition-all touch-manipulation min-h-[36px]"
-              title="Flux Live X/Twitter #ManifNantes"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-              <span className="hidden xs:inline">Flux Live</span>
-              <span className="xs:hidden">Live</span>
             </button>
           )}
 

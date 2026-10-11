@@ -182,5 +182,33 @@ assert(
   `Analyseur prédictif de parcours opérationnel : ${routeDiagnosis.traversedSectors.length} zones détectées (${routeDiagnosis.totalDistanceKm} km, vigilance ${routeDiagnosis.globalVigilanceLevel})`
 );
 
+console.log("\n=== 6. TEST LYCÉES BLOCUS (SEUIL 5 USERS) & CAMÉRAS SUNDERS / OSM ===");
+const { NANTES_LYCEES } = require("../src/config/data/nantes-lycees.ts");
+const { CONSENSUS_CONFIG } = require("../src/config/categories.ts");
+const { getSundersGeoJson, SUNDERS_CAMERAS } = require("../src/lib/sundersGeoJson.ts");
+
+assert(NANTES_LYCEES.length >= 25, `Référentiel des Lycées nantais chargé (${NANTES_LYCEES.length} établissements)`);
+assert(CONSENSUS_CONFIG.BLOCUS_REPORTS_THRESHOLD === 5, `Seuil de consensus Blocus Lycée configuré à ${CONSENSUS_CONFIG.BLOCUS_REPORTS_THRESHOLD} signalements utilisateurs`);
+
+const clemenceau = NANTES_LYCEES[0];
+const blocusTs = Date.now();
+const blocusChallenge = buildChallengeString("BLOCUS_LYCEE", clemenceau.coordinates[1], clemenceau.coordinates[0], blocusTs);
+const blocusPoW = solveInThread(blocusChallenge, 4);
+const validBlocusReport = {
+  id: "rep_blocus_clem",
+  category: "BLOCUS_LYCEE",
+  lat: clemenceau.coordinates[1],
+  lng: clemenceau.coordinates[0],
+  timestamp: blocusTs,
+  powNonce: blocusPoW.nonce,
+};
+assert(validateInboundReport(validBlocusReport) !== null, "Signalement BLOCUS_LYCEE valide accepté par le moteur cryptographique");
+
+const sundersGeo = getSundersGeoJson();
+assert(
+  SUNDERS_CAMERAS.length > 1500 && sundersGeo.pointsGeoJson.features.length === SUNDERS_CAMERAS.length && sundersGeo.conesGeoJson.features.length > 500,
+  `Base SunderS / OpenStreetMap chargée : ${SUNDERS_CAMERAS.length} caméras et ${sundersGeo.conesGeoJson.features.length} cônes de vision`
+);
+
 console.log(`\n🎉 TOUS LES TESTS DE CYBERSÉCURITÉ ET MOTEUR SONT VALIDÉS (${passedTests}/${totalTests}) !`);
 

@@ -48,15 +48,31 @@ export const REPORT_CATEGORIES: Record<ReportCategory, ReportCategoryMetadata> =
     iconName: "cross",
     legalRationale:
       "Facilitation de l'accès aux soins d'urgence vitale et aux premiers secours sans entrave.",
+    minThreshold: 2,
+  },
+  BLOCUS_LYCEE: {
+    id: "BLOCUS_LYCEE",
+    label: "Blocus Lycéen / Mobilisation",
+    shortLabel: "Blocus Lycée",
+    description: "Blocus ou assemblée générale devant l'établissement (visible après 5 signalements citoyens).",
+    color: "#f97316", // Orange 500
+    badgeBg: "rgba(249, 115, 22, 0.18)",
+    borderColor: "#fb923c",
+    iconName: "school",
+    legalRationale:
+      "Information factuelle d'accès aux établissements scolaires et sécurité des abords lycéens.",
+    minThreshold: 5,
   },
 };
 
 export const CONSENSUS_CONFIG = {
   CLUSTER_RADIUS_METERS: 100, // Rayon géographique d'agrégation
-  MIN_REPORTS_THRESHOLD: 2, // Seuil minimal d'occurrences pour affichage public
-  SLIDING_WINDOW_MS: 5 * 60 * 1000, // 5 minutes de fenêtre glissante pour l'agrégation
+  MIN_REPORTS_THRESHOLD: 2, // Seuil minimal par défaut (2 signalements)
+  BLOCUS_REPORTS_THRESHOLD: 5, // Seuil requis pour afficher un blocus de lycée (5 signalements)
+  SLIDING_WINDOW_MS: 15 * 60 * 1000, // 15 minutes de fenêtre glissante pour l'agrégation
   TTL_MOBILE_MS: 5 * 60 * 1000, // 5 minutes si cortège MOBILE
   TTL_IMMOBILE_MS: 10 * 60 * 1000, // 10 minutes si cortège IMMOBILE
+  TTL_BLOCUS_MS: 45 * 60 * 1000, // 45 minutes pour un blocus lycéen validé
   CLEANUP_INTERVAL_MS: 5 * 1000, // Vérification d'expiration toutes les 5 secondes
 };
 
