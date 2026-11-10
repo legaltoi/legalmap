@@ -7,7 +7,13 @@
 
 import * as ed from "@noble/ed25519";
 import { sha512 } from "@noble/hashes/sha2.js";
-import { CortegeMovementStatus, OfficialAttendanceFigures } from "@/types";
+import {
+  CortegeMovementStatus,
+  OfficialAttendanceFigures,
+  ProhibitedZone,
+  DispersionZone,
+  SignedAdminZonesPayload,
+} from "@/types";
 
 // Configuration du hachage SHA-512 pour Ed25519
 ed.hashes.sha512 = (...m) => sha512(ed.etc.concatBytes(...m));
@@ -131,3 +137,111 @@ export function derivePublicKey(privateKeyHex: string): string {
   const pubBytes = ed.getPublicKey(privBytes);
   return ed.etc.bytesToHex(pubBytes);
 }
+
+export interface AdminZonesMessageData {
+  prohibitedZone: ProhibitedZone | null;
+  dispersionZone: DispersionZone | null;
+  timestamp: number;
+  nonce: string;
+}
+
+/**
+ * Sérialisation canonique et déterministe de l'état des zones éditables
+ */
+export function canonicalizeAdminZones(data: AdminZonesMessageData): Uint8Array {
+  const canonicalObject: Record<string, any> = {
+    dispersionZone: data.dispersionZone
+      ? {
+          activatedAt: data.dispersionZone.activatedAt,
+          center: [
+            Number(data.dispersionZone.center[0].toFixed(5)),
+            Number(data.dispersionZone.center[1].toFixed(5)),
+          ],
+          expiresAt: data.dispersionZone.expiresAt,
+          id: data.dispersionZone.id,
+          isActive: Boolean(data.dispersionZone.isActive),
+          radiusMeters: Math.round(data.dispersionZone.radiusMeters),
+          ttlDurationMs: Math.round(data.dispersionZone.ttlDurationMs),
+        }
+      : null,
+    nonce: data.nonce,
+    prohibitedZone: data.prohibitedZone
+      ? {
+          createdAt: data.prohibitedZone.createdAt,
+          decreeRef: data.prohibitedZone.decreeRef || "",
+          endTime: data.prohibitedZone.endTime || "",
+          id: data.prohibitedZone.id,
+          name: data.prohibitedZone.name || "",
+          polygon: data.prohibitedZone.polygon.map(([lng, lat]) => [
+            Number(lng.toFixed(5)),
+            Number(lat.toFixed(5)),
+          ]),
+          startTime: data.prohibitedZone.startTime || "",
+        }
+      : null,
+    timestamp: data.timestamp,
+  };
+  return new TextEncoder().encode(JSON.stringify(canonicalObject));
+}
+
+/**
+ * Signe un état des zones administratives avec la clé Ed25519 de l'organisateur
+ */
+export function signAdminZones(
+  data: AdminZonesMessageData,
+  privateKeyHex: string
+): SignedAdminZonesPayload {
+  const cleanPrivHex = privateKeyHex.trim().toLowerCase();
+  const privBytes = ed.etc.hexToBytes(cleanPrivHex);
+  const messageBytes = canonicalizeAdminZones(data);
+
+  const sigBytes = ed.sign(messageBytes, privBytes);
+  const signature = ed.etc.bytesToHex(sigBytes);
+
+  return {
+    data: {
+      ...data,
+      updatedAt: data.timestamp,
+    },
+    signature,
+  };
+}
+
+/**
+ * Vérifie l'authenticité et la fraîcheur d'un état de zones administratives reçu
+ */
+export function verifyAdminZones(
+  payload: SignedAdminZonesPayload,
+  publicKeyHex: string = process.env.NEXT_PUBLIC_ADMIN_VERIFY_KEY || DEFAULT_ADMIN_VERIFY_KEY
+): boolean {
+  try {
+    if (!payload || !payload.data || !payload.signature) {
+      return false;
+    }
+
+    const { data, signature } = payload;
+    const now = Date.now();
+
+    const timeDelta = Math.abs(now - data.timestamp);
+    if (timeDelta > 60 * 1000) {
+      console.warn(`[Crypto] Rejet zones admin expirées ou rejouées : delta = ${timeDelta}ms (max 60000ms)`);
+      return false;
+    }
+
+    const cleanPubHex = publicKeyHex.trim().toLowerCase();
+    const pubBytes = ed.etc.hexToBytes(cleanPubHex);
+    const sigBytes = ed.etc.hexToBytes(signature.trim().toLowerCase());
+    const messageBytes = canonicalizeAdminZones(data);
+
+    const isValid = ed.verify(sigBytes, messageBytes, pubBytes);
+    if (!isValid) {
+      console.warn("[Crypto] Rejet : Signature Ed25519 des zones invalide ou altérée.");
+    }
+
+    return isValid;
+  } catch (err) {
+    console.error("[Crypto] Erreur vérification zones Ed25519:", err);
+    return false;
+  }
+}
+

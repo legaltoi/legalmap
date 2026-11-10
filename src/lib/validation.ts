@@ -4,9 +4,14 @@
  */
 
 import { z } from "zod";
-import { ReportEvent, SignedCortegePayload, ReportCategory } from "@/types";
+import {
+  ReportEvent,
+  SignedCortegePayload,
+  ReportCategory,
+  SignedAdminZonesPayload,
+} from "@/types";
 import { verifyProofOfWork } from "./pow";
-import { verifyCortegeState } from "./crypto";
+import { verifyCortegeState, verifyAdminZones } from "./crypto";
 
 // Périmètre géographique strict de l'agglomération nantaise
 export const NANTES_BOUNDS = {
@@ -153,3 +158,75 @@ export function validateInboundCortege(data: unknown): SignedCortegePayload | nu
     return null;
   }
 }
+
+const ProhibitedZoneSchema = z
+  .object({
+    id: z.string().min(1).max(64),
+    name: z.string().max(120).optional(),
+    decreeRef: z.string().max(120).optional(),
+    startTime: z.string().max(32).optional(),
+    endTime: z.string().max(32).optional(),
+    polygon: z.array(z.tuple([z.number(), z.number()])).min(3),
+    createdAt: z.number().int().positive(),
+  })
+  .strict();
+
+const DispersionZoneSchema = z
+  .object({
+    id: z.string().min(1).max(64),
+    center: z.tuple([z.number(), z.number()]),
+    radiusMeters: z.number().min(10).max(5000),
+    activatedAt: z.number().int().positive(),
+    ttlDurationMs: z.number().int().positive(),
+    expiresAt: z.number().int().positive(),
+    isActive: z.boolean(),
+  })
+  .strict();
+
+export const SignedAdminZonesSchema = z
+  .object({
+    data: z
+      .object({
+        prohibitedZone: ProhibitedZoneSchema.nullable(),
+        dispersionZone: DispersionZoneSchema.nullable(),
+        updatedAt: z.number().int().positive().optional(),
+        timestamp: z.number().int().positive(),
+        nonce: z.string().min(8).max(64),
+      })
+      .strict(),
+    signature: z
+      .string()
+      .length(128, "Signature Ed25519 hexadécimale attendue (128 hex chars)")
+      .regex(/^[0-9a-fA-F]+$/),
+  })
+  .strict();
+
+/**
+ * Valide et filtre un payload de zones administratives entrant :
+ * 1. Validation de schéma Zod
+ * 2. Vérification de la signature cryptographique Ed25519
+ * 3. Vérification de l'anti-rejeu (< 60 secondes)
+ */
+export function validateInboundAdminZones(data: unknown): SignedAdminZonesPayload | null {
+  try {
+    const parsed = SignedAdminZonesSchema.safeParse(data);
+    if (!parsed.success) {
+      console.warn("[Sanitizer] Rejet zones admin non conformes :", parsed.error.issues);
+      return null;
+    }
+
+    const signedPayload = parsed.data as SignedAdminZonesPayload;
+
+    const isSigValid = verifyAdminZones(signedPayload);
+    if (!isSigValid) {
+      console.warn("[Sanitizer] Rejet zones admin : signature Ed25519 refusée ou rejeu");
+      return null;
+    }
+
+    return signedPayload;
+  } catch (err) {
+    console.error("[Sanitizer] Erreur validation zones admin:", err);
+    return null;
+  }
+}
+

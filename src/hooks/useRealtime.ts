@@ -3,18 +3,28 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { getSupabaseClient, CHANNELS, isSupabaseConfigured } from "@/lib/supabase";
-import { ReportEvent, CortegeState, ReportCategory, SignedCortegePayload } from "@/types";
+import {
+  ReportEvent,
+  CortegeState,
+  ReportCategory,
+  SignedCortegePayload,
+  AdminZonesState,
+  SignedAdminZonesPayload,
+} from "@/types";
 import { roundCoordinates } from "@/lib/geo";
 import { solveProofOfWork } from "@/lib/pow";
 import {
   validateInboundReport,
   validateInboundCortege,
+  validateInboundAdminZones,
   NANTES_BOUNDS,
 } from "@/lib/validation";
+import { MAP_UI_CONFIG } from "@/config/mapUi";
 
 interface UseRealtimeOptions {
   onReportReceived?: (report: ReportEvent) => void;
   onCortegeStateReceived?: (state: CortegeState) => void;
+  onAdminZonesReceived?: (zones: AdminZonesState) => void;
 }
 
 export type RealtimeStatus = "connected" | "connecting" | "offline" | "demo_local";
@@ -22,6 +32,7 @@ export type RealtimeStatus = "connected" | "connecting" | "offline" | "demo_loca
 export function useRealtime({
   onReportReceived,
   onCortegeStateReceived,
+  onAdminZonesReceived,
 }: UseRealtimeOptions = {}) {
   const [status, setStatus] = useState<RealtimeStatus>(
     isSupabaseConfigured ? "connecting" : "demo_local"
@@ -39,6 +50,7 @@ export function useRealtime({
   // Sauvegarde des callbacks dans des refs stables
   const onReportRef = useRef(onReportReceived);
   const onCortegeRef = useRef(onCortegeStateReceived);
+  const onAdminZonesRef = useRef(onAdminZonesReceived);
 
   useEffect(() => {
     onReportRef.current = onReportReceived;
@@ -47,6 +59,10 @@ export function useRealtime({
   useEffect(() => {
     onCortegeRef.current = onCortegeStateReceived;
   }, [onCortegeStateReceived]);
+
+  useEffect(() => {
+    onAdminZonesRef.current = onAdminZonesReceived;
+  }, [onAdminZonesReceived]);
 
   // Canal miroir local d'appoint (BroadcastChannel Web API)
   const localBcRef = useRef<BroadcastChannel | null>(null);
@@ -79,6 +95,22 @@ export function useRealtime({
                 attendanceFigures: validCortege.data.attendanceFigures ?? null,
                 updatedAt: validCortege.data.timestamp,
               });
+            }
+          } else if (type === "ADMIN_ZONES") {
+            const validZones = validateInboundAdminZones(payload);
+            if (validZones && onAdminZonesRef.current) {
+              const zonesState: AdminZonesState = {
+                prohibitedZone: validZones.data.prohibitedZone,
+                dispersionZone: validZones.data.dispersionZone,
+                updatedAt: validZones.data.timestamp,
+              };
+              try {
+                localStorage.setItem(
+                  MAP_UI_CONFIG.STORAGE_KEYS.ADMIN_ZONES_CACHE,
+                  JSON.stringify(zonesState)
+                );
+              } catch {}
+              onAdminZonesRef.current(zonesState);
             }
           }
         };
@@ -169,6 +201,24 @@ export function useRealtime({
           });
         }
       })
+      .on("broadcast", { event: "admin-zones-update" }, (payload) => {
+        const validZones = validateInboundAdminZones(payload.payload);
+        if (validZones && onAdminZonesRef.current) {
+          console.info("[Realtime] Zones admin reçues et validées");
+          const zonesState: AdminZonesState = {
+            prohibitedZone: validZones.data.prohibitedZone,
+            dispersionZone: validZones.data.dispersionZone,
+            updatedAt: validZones.data.timestamp,
+          };
+          try {
+            localStorage.setItem(
+              MAP_UI_CONFIG.STORAGE_KEYS.ADMIN_ZONES_CACHE,
+              JSON.stringify(zonesState)
+            );
+          } catch {}
+          onAdminZonesRef.current(zonesState);
+        }
+      })
       .on("presence", { event: "sync" }, () => {
         const presenceState = cortegeChannel.presenceState();
         for (const key in presenceState) {
@@ -190,6 +240,24 @@ export function useRealtime({
                   attendanceFigures: validCortege.data.attendanceFigures ?? null,
                   updatedAt: validCortege.data.timestamp,
                 });
+              }
+            }
+            if (item?.zonesPayload) {
+              const validZones = validateInboundAdminZones(item.zonesPayload);
+              if (validZones && onAdminZonesRef.current) {
+                console.info("[Realtime] Zones admin synchronisées via Presence");
+                const zonesState: AdminZonesState = {
+                  prohibitedZone: validZones.data.prohibitedZone,
+                  dispersionZone: validZones.data.dispersionZone,
+                  updatedAt: validZones.data.timestamp,
+                };
+                try {
+                  localStorage.setItem(
+                    MAP_UI_CONFIG.STORAGE_KEYS.ADMIN_ZONES_CACHE,
+                    JSON.stringify(zonesState)
+                  );
+                } catch {}
+                onAdminZonesRef.current(zonesState);
               }
             }
           }
@@ -366,6 +434,71 @@ export function useRealtime({
     []
   );
 
+  /**
+   * Émission officielle des zones administratives (Ed25519) par l'organisateur
+   */
+  const sendSignedAdminZones = useCallback(
+    async (signedPayload: SignedAdminZonesPayload): Promise<boolean> => {
+      const zonesState: AdminZonesState = {
+        prohibitedZone: signedPayload.data.prohibitedZone,
+        dispersionZone: signedPayload.data.dispersionZone,
+        updatedAt: signedPayload.data.timestamp,
+      };
+
+      // 1. Sauvegarde locale immédiate pour le mode hors-ligne
+      try {
+        localStorage.setItem(
+          MAP_UI_CONFIG.STORAGE_KEYS.ADMIN_ZONES_CACHE,
+          JSON.stringify(zonesState)
+        );
+      } catch {}
+
+      // 2. Diffusion locale multi-onglets
+      try {
+        localBcRef.current?.postMessage({
+          type: "ADMIN_ZONES",
+          payload: signedPayload,
+        });
+      } catch (err) {
+        console.warn("[LocalBC] Erreur local admin zones:", err);
+      }
+
+      // 3. Traitement local immédiat
+      onAdminZonesRef.current?.(zonesState);
+
+      // 4. Diffusion Supabase Realtime (Broadcast + Presence pour rattrapage)
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        try {
+          const channel = cortegeChannelRef.current || supabase.channel(CHANNELS.CORTEGE);
+
+          try {
+            await channel.track({
+              zonesPayload: signedPayload,
+              updatedAt: Date.now(),
+            });
+          } catch (pErr) {
+            console.warn("[Realtime] Échec channel.track presence zones:", pErr);
+          }
+
+          const sendResult = await channel.send({
+            type: "broadcast",
+            event: "admin-zones-update",
+            payload: signedPayload,
+          });
+          console.info("[Realtime] Diffusion zones effectuée :", sendResult);
+          return true;
+        } catch (err) {
+          console.warn("[Realtime] Échec envoi broadcast zones:", err);
+          return false;
+        }
+      }
+
+      return true;
+    },
+    []
+  );
+
   return {
     status,
     isConfigured: isSupabaseConfigured,
@@ -373,5 +506,6 @@ export function useRealtime({
     isSolvingPoW,
     sendReport,
     sendSignedCortegeState,
+    sendSignedAdminZones,
   };
 }

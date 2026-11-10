@@ -5,11 +5,29 @@ import maplibregl from "maplibre-gl";
 import * as pmtiles from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { ConsensusMarker, CortegeState, POI, POICategory, ReportCategory } from "@/types";
+import {
+  ConsensusMarker,
+  CortegeState,
+  POI,
+  POICategory,
+  ReportCategory,
+  AdminZonesState,
+  SafeExit,
+  ProhibitedZone,
+  DispersionZone,
+} from "@/types";
 import nantesData from "@/config/cities/nantes.json";
 import nantesBaseGeoJson from "@/config/cities/nantes-base.json";
 import { REPORT_CATEGORIES, CONSENSUS_CONFIG } from "@/config/categories";
-import { formatTimeRemaining, calculateHaversineDistance } from "@/lib/geo";
+import {
+  formatTimeRemaining,
+  calculateHaversineDistance,
+  createCirclePolygon,
+  isPointInPolygon,
+  isPointNearPolygon,
+  calculateCentroid,
+} from "@/lib/geo";
+import { MAP_UI_CONFIG } from "@/config/mapUi";
 import {
   Locate,
   Compass,
@@ -27,6 +45,13 @@ import {
   Scale,
   Toilet,
   Layers,
+  ShieldAlert,
+  OctagonAlert,
+  Ban,
+  Radio,
+  ArrowUpRight,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 import { FilterBar, FilterCategoryId } from "@/components/FilterBar";
 import { useWindData } from "@/hooks/useWindData";
@@ -254,6 +279,7 @@ interface MapViewProps {
   consensusMarkers: ConsensusMarker[];
   cortegeState: CortegeState;
   userLocation: { lat: number; lng: number } | null;
+  adminZones?: AdminZonesState;
   onMapClickReport?: (coords: { lat: number; lng: number }) => void;
   onTriggerReport?: (
     category: ReportCategory,
@@ -270,6 +296,7 @@ export function MapView({
   consensusMarkers,
   cortegeState,
   userLocation,
+  adminZones,
   onMapClickReport,
   onTriggerReport,
   isMapSelectActive = false,
@@ -290,6 +317,26 @@ export function MapView({
   const updatePoiMarkersRef = useRef<() => void>(() => {});
   const tacticalMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const windMarkersRef = useRef<maplibregl.Marker[]>([]);
+
+  // Marqueurs & Animation des Zones Éditables
+  const prohibitedLabelMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const safeExitMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const pulseAnimFrameRef = useRef<number | null>(null);
+  const adminZonesRef = useRef(adminZones);
+  adminZonesRef.current = adminZones;
+
+  // Horloge locale pour rafraîchir l'expiration automatique et les timers
+  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
+  const [selectedProhibitedZone, setSelectedProhibitedZone] = useState<ProhibitedZone | null>(null);
+  const [selectedSafeExit, setSelectedSafeExit] = useState<SafeExit | null>(null);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [selectedFilterCategories, setSelectedFilterCategories] = useState<FilterCategoryId[]>(["ALL"]);
 
@@ -520,6 +567,99 @@ export function MapView({
     const attachLayersAndPois = () => {
       setMapLoaded(true);
       triggerResize();
+
+      // 0. Calques des Zones Éditables (Interdiction & Dispersion) - En-dessous du tracé officiel
+      if (!map.getSource("prohibited-zone-source")) {
+        map.addSource("prohibited-zone-source", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        map.addLayer({
+          id: "prohibited-zone-fill",
+          type: "fill",
+          source: "prohibited-zone-source",
+          paint: {
+            "fill-color": MAP_UI_CONFIG.PROHIBITED_ZONE.fillColor,
+            "fill-opacity": MAP_UI_CONFIG.PROHIBITED_ZONE.fillOpacity,
+          },
+        });
+
+        map.addLayer({
+          id: "prohibited-zone-glow",
+          type: "line",
+          source: "prohibited-zone-source",
+          paint: {
+            "line-color": MAP_UI_CONFIG.PROHIBITED_ZONE.glowColor,
+            "line-width": MAP_UI_CONFIG.PROHIBITED_ZONE.glowWidth,
+            "line-opacity": MAP_UI_CONFIG.PROHIBITED_ZONE.glowOpacity,
+            "line-blur": 3,
+          },
+        });
+
+        map.addLayer({
+          id: "prohibited-zone-outline",
+          type: "line",
+          source: "prohibited-zone-source",
+          paint: {
+            "line-color": MAP_UI_CONFIG.PROHIBITED_ZONE.strokeColor,
+            "line-width": MAP_UI_CONFIG.PROHIBITED_ZONE.strokeWidth,
+            "line-dasharray": [...MAP_UI_CONFIG.PROHIBITED_ZONE.strokeDasharray],
+          },
+        });
+
+        map.on("click", "prohibited-zone-fill", () => {
+          if (adminZonesRef.current?.prohibitedZone) {
+            setSelectedProhibitedZone(adminZonesRef.current.prohibitedZone);
+          }
+        });
+        map.on("mouseenter", "prohibited-zone-fill", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "prohibited-zone-fill", () => {
+          map.getCanvas().style.cursor = "";
+        });
+      }
+
+      if (!map.getSource("dispersion-zone-source")) {
+        map.addSource("dispersion-zone-source", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        map.addLayer({
+          id: "dispersion-zone-fill",
+          type: "fill",
+          source: "dispersion-zone-source",
+          paint: {
+            "fill-color": MAP_UI_CONFIG.DISPERSION_ZONE.fillColor,
+            "fill-opacity": MAP_UI_CONFIG.DISPERSION_ZONE.fillOpacityBase,
+          },
+        });
+
+        map.addLayer({
+          id: "dispersion-zone-glow",
+          type: "line",
+          source: "dispersion-zone-source",
+          paint: {
+            "line-color": MAP_UI_CONFIG.DISPERSION_ZONE.glowColor,
+            "line-width": 6,
+            "line-opacity": 0.28,
+            "line-blur": 4,
+          },
+        });
+
+        map.addLayer({
+          id: "dispersion-zone-outline",
+          type: "line",
+          source: "dispersion-zone-source",
+          paint: {
+            "line-color": MAP_UI_CONFIG.DISPERSION_ZONE.strokeColor,
+            "line-width": MAP_UI_CONFIG.DISPERSION_ZONE.strokeWidth,
+            "line-dasharray": [...MAP_UI_CONFIG.DISPERSION_ZONE.strokeDasharray],
+          },
+        });
+      }
 
       // 1. Source du parcours officiel
       const dynamicRoute = cortegeStateRef.current?.routeCoordinates;
@@ -759,6 +899,14 @@ export function MapView({
       tacticalMarkersRef.current.clear();
       windMarkersRef.current.forEach((m) => m.remove());
       windMarkersRef.current = [];
+      prohibitedLabelMarkerRef.current?.remove();
+      prohibitedLabelMarkerRef.current = null;
+      safeExitMarkersRef.current.forEach((m) => m.remove());
+      safeExitMarkersRef.current.clear();
+      if (pulseAnimFrameRef.current) {
+        cancelAnimationFrame(pulseAnimFrameRef.current);
+        pulseAnimFrameRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
     };
@@ -958,6 +1106,228 @@ export function MapView({
       });
     }
   }, [isWindEnabled, windData, mapLoaded]);
+
+  // Synchronisation dynamique des Zones Administratives (Interdiction & Dispersion) et Issues de Secours
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+    const prohibitedZone = adminZones?.prohibitedZone;
+    const dispersionZone = adminZones?.dispersionZone;
+    const isDispersionActive = Boolean(
+      dispersionZone && dispersionZone.isActive && dispersionZone.expiresAt > currentTime
+    );
+
+    // 1. Mise à jour de la zone d'interdiction (GeoJSON + Label discret au centre)
+    const probSource = map.getSource("prohibited-zone-source") as maplibregl.GeoJSONSource | undefined;
+    if (probSource) {
+      if (prohibitedZone?.polygon && prohibitedZone.polygon.length >= 3) {
+        probSource.setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              properties: {
+                name: prohibitedZone.name || "Zone d'interdiction",
+                decreeRef: prohibitedZone.decreeRef || "",
+              },
+              geometry: {
+                type: "Polygon",
+                coordinates: [prohibitedZone.polygon],
+              },
+            },
+          ],
+        });
+      } else {
+        probSource.setData({ type: "FeatureCollection", features: [] });
+      }
+    }
+
+    if (prohibitedZone?.polygon && prohibitedZone.polygon.length >= 3) {
+      const center = calculateCentroid(
+        prohibitedZone.polygon.map(([lng, lat]) => ({ lat, lng }))
+      );
+      if (!prohibitedLabelMarkerRef.current) {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className =
+          "px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform backdrop-blur-md z-20";
+        el.style.backgroundColor = MAP_UI_CONFIG.PROHIBITED_ZONE.labelBg;
+        el.style.borderColor = MAP_UI_CONFIG.PROHIBITED_ZONE.labelBorder;
+        el.style.borderWidth = "1px";
+        el.style.color = MAP_UI_CONFIG.PROHIBITED_ZONE.labelTextColor;
+        el.innerHTML = `<span>⛔</span><span class="font-sans font-black">${
+          prohibitedZone.name || "Zone d'interdiction"
+        }</span>`;
+        el.onclick = (e) => {
+          e.stopPropagation();
+          setSelectedProhibitedZone(prohibitedZone);
+        };
+
+        prohibitedLabelMarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat([center.lng, center.lat])
+          .addTo(map);
+      } else {
+        prohibitedLabelMarkerRef.current.setLngLat([center.lng, center.lat]);
+        const el = prohibitedLabelMarkerRef.current.getElement();
+        if (el) {
+          el.innerHTML = `<span>⛔</span><span class="font-sans font-black">${
+            prohibitedZone.name || "Zone d'interdiction"
+          }</span>`;
+          el.onclick = (e) => {
+            e.stopPropagation();
+            setSelectedProhibitedZone(prohibitedZone);
+          };
+        }
+      }
+    } else if (prohibitedLabelMarkerRef.current) {
+      prohibitedLabelMarkerRef.current.remove();
+      prohibitedLabelMarkerRef.current = null;
+    }
+
+    // 2. Mise à jour de la zone de dispersion (GeoJSON + Pulsation douce)
+    const dispSource = map.getSource("dispersion-zone-source") as maplibregl.GeoJSONSource | undefined;
+    let circleCoords: [number, number][] = [];
+    if (dispSource) {
+      if (isDispersionActive && dispersionZone) {
+        circleCoords = createCirclePolygon(dispersionZone.center, dispersionZone.radiusMeters);
+        dispSource.setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              properties: { name: "Zone de Dispersion" },
+              geometry: {
+                type: "Polygon",
+                coordinates: [circleCoords],
+              },
+            },
+          ],
+        });
+      } else {
+        dispSource.setData({ type: "FeatureCollection", features: [] });
+      }
+    }
+
+    // Pulsation douce (respecte prefers-reduced-motion)
+    if (pulseAnimFrameRef.current) {
+      cancelAnimationFrame(pulseAnimFrameRef.current);
+      pulseAnimFrameRef.current = null;
+    }
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (isDispersionActive && !prefersReducedMotion && map.getLayer("dispersion-zone-fill")) {
+      const start = performance.now();
+      const { fillOpacityBase, fillOpacityPulseMax, pulseSpeedMs } = MAP_UI_CONFIG.DISPERSION_ZONE;
+      const animatePulse = (now: number) => {
+        const elapsed = (now - start) % pulseSpeedMs;
+        const progress = (Math.sin((elapsed / pulseSpeedMs) * 2 * Math.PI) + 1) / 2;
+        const currentOpacity = fillOpacityBase + progress * (fillOpacityPulseMax - fillOpacityBase);
+        try {
+          if (map.getLayer("dispersion-zone-fill")) {
+            map.setPaintProperty("dispersion-zone-fill", "fill-opacity", currentOpacity);
+          }
+        } catch {}
+        pulseAnimFrameRef.current = requestAnimationFrame(animatePulse);
+      };
+      pulseAnimFrameRef.current = requestAnimationFrame(animatePulse);
+    } else if (map.getLayer("dispersion-zone-fill")) {
+      try {
+        map.setPaintProperty(
+          "dispersion-zone-fill",
+          "fill-opacity",
+          MAP_UI_CONFIG.DISPERSION_ZONE.fillOpacityBase
+        );
+      } catch {}
+    }
+
+    // 3. Calcul et affichage automatique des Issues de Secours (2-3 meilleures issues)
+    const currentSafeExitMarkers = safeExitMarkersRef.current;
+    if (!isDispersionActive || !dispersionZone) {
+      currentSafeExitMarkers.forEach((m) => m.remove());
+      currentSafeExitMarkers.clear();
+    } else {
+      const rawSafeExits: SafeExit[] = (nantesData.safeExits || []) as SafeExit[];
+      const prohibitedPoly = prohibitedZone?.polygon;
+
+      const refLng = userLocation ? userLocation.lng : dispersionZone.center[0];
+      const refLat = userLocation ? userLocation.lat : dispersionZone.center[1];
+
+      // Filtrer les issues : hors dispersion, hors interdiction, triées par distance
+      const eligibleExits = rawSafeExits
+        .filter((exit) => {
+          if (circleCoords.length >= 3 && isPointInPolygon(exit.coordinates, circleCoords)) {
+            return false;
+          }
+          if (prohibitedPoly && prohibitedPoly.length >= 3 && isPointInPolygon(exit.coordinates, prohibitedPoly)) {
+            return false;
+          }
+          return true;
+        })
+        .map((exit) => ({
+          exit,
+          distanceMeters: calculateHaversineDistance(
+            refLat,
+            refLng,
+            exit.coordinates[1],
+            exit.coordinates[0]
+          ),
+        }))
+        .sort((a, b) => a.distanceMeters - b.distanceMeters)
+        .slice(0, MAP_UI_CONFIG.SAFE_EXITS.maxExitsToShow);
+
+      const activeExitIds = new Set(eligibleExits.map((e) => e.exit.id));
+
+      for (const [id, marker] of currentSafeExitMarkers.entries()) {
+        if (!activeExitIds.has(id)) {
+          marker.remove();
+          currentSafeExitMarkers.delete(id);
+        }
+      }
+
+      eligibleExits.forEach(({ exit }, index) => {
+        if (currentSafeExitMarkers.has(exit.id)) {
+          currentSafeExitMarkers.get(exit.id)!.setLngLat(exit.coordinates);
+        } else {
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className =
+            "px-3 py-2 rounded-2xl bg-emerald-950/95 border-2 border-emerald-400 text-emerald-200 text-xs font-black shadow-2xl flex items-center gap-2 cursor-pointer active:scale-95 transition-transform min-h-[44px] z-30 select-none animate-in fade-in zoom-in-95 backdrop-blur-md";
+          el.style.backgroundColor = MAP_UI_CONFIG.SAFE_EXITS.badgeBg;
+          el.style.borderColor = MAP_UI_CONFIG.SAFE_EXITS.borderColor;
+          el.style.color = MAP_UI_CONFIG.SAFE_EXITS.textColor;
+          el.innerHTML = `
+            <div class="w-6 h-6 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold text-xs shrink-0 shadow">
+              ↗
+            </div>
+            <div class="flex flex-col text-left leading-tight">
+              <span class="text-[9px] uppercase font-mono tracking-wider opacity-80">Issue ${index + 1}</span>
+              <span class="text-xs font-black truncate max-w-[125px]">${exit.name}</span>
+            </div>
+          `;
+          el.onclick = (e) => {
+            e.stopPropagation();
+            setSelectedSafeExit(exit);
+          };
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat(exit.coordinates)
+            .addTo(map);
+
+          currentSafeExitMarkers.set(exit.id, marker);
+        }
+      });
+    }
+
+    return () => {
+      if (pulseAnimFrameRef.current) {
+        cancelAnimationFrame(pulseAnimFrameRef.current);
+        pulseAnimFrameRef.current = null;
+      }
+    };
+  }, [adminZones, currentTime, userLocation, mapLoaded]);
 
   // Moteur d'affichage dynamique, zoom-adaptatif et anti-collision des POIs et Lycées
   const updatePoiMarkers = useCallback(() => {
@@ -1471,6 +1841,117 @@ export function MapView({
     ).length;
   }, [consensusMarkers]);
 
+  // Détection des conditions d'alerte sobre et non bloquante (Périmètre d'interdiction & Dispersion)
+  const userCoords: [number, number] | null = userLocation
+    ? [userLocation.lng, userLocation.lat]
+    : null;
+  const prohibitedPoly = adminZones?.prohibitedZone?.polygon;
+
+  const isUserInsideProhibited = Boolean(
+    userCoords &&
+      prohibitedPoly &&
+      prohibitedPoly.length >= 3 &&
+      isPointInPolygon(userCoords, prohibitedPoly)
+  );
+
+  const isUserNearProhibited = Boolean(
+    !isUserInsideProhibited &&
+      userCoords &&
+      prohibitedPoly &&
+      prohibitedPoly.length >= 3 &&
+      isPointNearPolygon(
+        userCoords,
+        prohibitedPoly,
+        MAP_UI_CONFIG.PROHIBITED_ZONE.approachThresholdMeters
+      )
+  );
+
+  const isCortegeNearProhibited = Boolean(
+    !isUserInsideProhibited &&
+      !isUserNearProhibited &&
+      cortegeState.head &&
+      prohibitedPoly &&
+      prohibitedPoly.length >= 3 &&
+      isPointNearPolygon(
+        [cortegeState.head.lng, cortegeState.head.lat],
+        prohibitedPoly,
+        MAP_UI_CONFIG.PROHIBITED_ZONE.approachThresholdMeters
+      )
+  );
+
+  const isDispersionOngoing = Boolean(
+    adminZones?.dispersionZone?.isActive &&
+      adminZones.dispersionZone.expiresAt > currentTime
+  );
+
+  // Détermination de l'alerte sobre active la plus prioritaire
+  let activeAlert: {
+    id: string;
+    level: "danger" | "warning" | "info";
+    title: string;
+    message: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null = null;
+
+  if (isUserInsideProhibited && !dismissedAlerts["user_inside_prohibited"]) {
+    activeAlert = {
+      id: "user_inside_prohibited",
+      level: "danger",
+      title: "Périmètre d'interdiction",
+      message: "Vous êtes actuellement situé dans la zone d'interdiction préfectorale.",
+      actionLabel: "Voir l'arrêté",
+      onAction: () => {
+        if (adminZones?.prohibitedZone) {
+          setSelectedProhibitedZone(adminZones.prohibitedZone);
+        }
+      },
+    };
+  } else if (isDispersionOngoing && !dismissedAlerts["dispersion_ongoing"]) {
+    activeAlert = {
+      id: "dispersion_ongoing",
+      level: "warning",
+      title: "Dispersion en cours",
+      message: "Ordre de dispersion actif dans ce secteur. Les issues de secours sont indiquées en vert.",
+      actionLabel: "Voir le secteur",
+      onAction: () => {
+        if (adminZones?.dispersionZone) {
+          mapRef.current?.flyTo({
+            center: adminZones.dispersionZone.center,
+            zoom: 15.2,
+            essential: true,
+          });
+        }
+      },
+    };
+  } else if (isUserNearProhibited && !dismissedAlerts["user_near_prohibited"]) {
+    activeAlert = {
+      id: "user_near_prohibited",
+      level: "warning",
+      title: "Périmètre proche (< 250 m)",
+      message: "Vous approchez du périmètre préfectoral d'interdiction de manifester.",
+      actionLabel: "Détails",
+      onAction: () => {
+        if (adminZones?.prohibitedZone) {
+          setSelectedProhibitedZone(adminZones.prohibitedZone);
+        }
+      },
+    };
+  } else if (isCortegeNearProhibited && !dismissedAlerts["cortege_near_prohibited"]) {
+    activeAlert = {
+      id: "cortege_near_prohibited",
+      level: "info",
+      title: "Information Cortège",
+      message: "La tête du cortège approche du périmètre d'interdiction préfectoral.",
+      actionLabel: "Voir la zone",
+      onAction: () => {
+        if (adminZones?.prohibitedZone) {
+          setSelectedProhibitedZone(adminZones.prohibitedZone);
+        }
+      },
+    };
+  }
+
   return (
     <div className="relative w-full h-full select-none overflow-hidden">
       {/* Conteneur de carte MapLibre */}
@@ -1496,6 +1977,70 @@ export function MapView({
         counts={filterCounts}
         activeBlocusCount={activeBlocusLyceesCount}
       />
+
+      {/* Alerte sobre et non bloquante */}
+      {activeAlert && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-30 pointer-events-auto transition-all animate-in fade-in slide-in-from-top-2"
+          style={{ top: "calc(max(10px, env(safe-area-inset-top, 10px)) + 105px)" }}
+        >
+          <div
+            className={`p-3 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-start justify-between gap-3 ${
+              activeAlert.level === "danger"
+                ? "bg-rose-950/90 border-rose-500/50 text-rose-100"
+                : activeAlert.level === "warning"
+                ? "bg-orange-950/90 border-orange-500/50 text-orange-100"
+                : "bg-zinc-900/90 border-cyan-500/40 text-cyan-100"
+            }`}
+          >
+            <div className="flex items-start gap-2.5 min-w-0">
+              <span className="text-base shrink-0 mt-0.5">
+                {activeAlert.level === "danger"
+                  ? "⛔"
+                  : activeAlert.level === "warning"
+                  ? "🚨"
+                  : "ℹ️"}
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    {activeAlert.title}
+                  </span>
+                </div>
+                <p className="text-[11px] leading-snug mt-0.5 opacity-90">
+                  {activeAlert.message}
+                </p>
+                {activeAlert.actionLabel && activeAlert.onAction && (
+                  <button
+                    type="button"
+                    onClick={activeAlert.onAction}
+                    className="mt-1.5 text-[11px] font-bold underline underline-offset-2 hover:opacity-100 opacity-90 flex items-center gap-1 min-h-[32px]"
+                  >
+                    <span>{activeAlert.actionLabel}</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const alertId = activeAlert?.id;
+                if (alertId) {
+                  setDismissedAlerts((prev) => ({ ...prev, [alertId]: true }));
+                }
+              }}
+              aria-label="Fermer l'alerte"
+              className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white shrink-0 min-h-[38px] min-w-[38px] flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Boutons d'action flottants latéraux (Caméras SunderS, Zones, Vent, GPS, Recentrement) */}
       <div className="absolute right-2.5 sm:right-4 bottom-[104px] sm:bottom-28 z-20 flex flex-col gap-2.5">
@@ -1979,6 +2524,216 @@ export function MapView({
               <span className="font-bold text-amber-400">
                 {formatTimeRemaining(Math.max(0, selectedConsensus.expiresAt - Date.now()))}
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Fiche Périmètre d'interdiction de manifester */}
+      {selectedProhibitedZone && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 sm:inset-auto sm:top-28 sm:left-4 z-40 flex items-end sm:items-start justify-center p-3 sm:p-0 bg-black/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
+        >
+          <div className="w-full max-w-sm bg-[#0b0b0f] border border-rose-500/40 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                  <Ban className="w-3.5 h-3.5" />
+                  <span>Arrêté d&apos;interdiction</span>
+                </span>
+                <h4 className="font-black text-sm text-white mt-1.5">
+                  {selectedProhibitedZone.name || "Zone d'interdiction de manifester"}
+                </h4>
+                {selectedProhibitedZone.decreeRef && (
+                  <p className="text-[11px] font-mono text-zinc-400 mt-0.5">
+                    Réf : {selectedProhibitedZone.decreeRef}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedProhibitedZone(null)}
+                aria-label="Fermer"
+                className="p-1 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {(selectedProhibitedZone.startTime || selectedProhibitedZone.endTime) && (
+              <div className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-mono flex items-center justify-between text-zinc-300">
+                <span className="text-zinc-500">Horaires :</span>
+                <span className="font-bold text-rose-300">
+                  {selectedProhibitedZone.startTime || "--:--"} → {selectedProhibitedZone.endTime || "--:--"}
+                </span>
+              </div>
+            )}
+
+            <div className="p-2.5 bg-zinc-900/80 border border-zinc-800/80 rounded-xl text-[11px] text-zinc-300 leading-relaxed">
+              Ce secteur fait l&apos;objet d&apos;un arrêté préfectoral portant interdiction temporaire de cortèges et rassemblements revendicatifs sur la voie publique (Art. L. 211-1 à L. 211-4 du CSI).
+            </div>
+
+            <div className="pt-1 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (mapRef.current && selectedProhibitedZone.polygon.length >= 3) {
+                    const center = calculateCentroid(
+                      selectedProhibitedZone.polygon.map(([lng, lat]) => ({ lat, lng }))
+                    );
+                    mapRef.current.flyTo({
+                      center: [center.lng, center.lat],
+                      zoom: 15.5,
+                      essential: true,
+                    });
+                  }
+                  setSelectedProhibitedZone(null);
+                }}
+                className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors border border-zinc-700 flex items-center justify-center gap-1.5 active:scale-95 min-h-[44px]"
+              >
+                <Compass className="w-3.5 h-3.5 text-rose-400" />
+                Centrer sur la zone
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Fiche Issue de Secours Logique */}
+      {selectedSafeExit && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 sm:inset-auto sm:top-28 sm:left-4 z-40 flex items-end sm:items-start justify-center p-3 sm:p-0 bg-black/60 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none"
+        >
+          <div className="w-full max-w-sm bg-[#0b0b0f] border border-emerald-500/40 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span>Issue de secours recommandée</span>
+                </span>
+                <h4 className="font-black text-sm text-white mt-1.5">
+                  {selectedSafeExit.name}
+                </h4>
+                {selectedSafeExit.description && (
+                  <p className="text-[11px] text-zinc-400 mt-0.5">{selectedSafeExit.description}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedSafeExit(null)}
+                aria-label="Fermer"
+                className="p-1 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Distance calculée */}
+            {(() => {
+              const refLng = userLocation
+                ? userLocation.lng
+                : adminZones?.dispersionZone?.center[0] ?? selectedSafeExit.coordinates[0];
+              const refLat = userLocation
+                ? userLocation.lat
+                : adminZones?.dispersionZone?.center[1] ?? selectedSafeExit.coordinates[1];
+              const dist = Math.round(
+                calculateHaversineDistance(
+                  refLat,
+                  refLng,
+                  selectedSafeExit.coordinates[1],
+                  selectedSafeExit.coordinates[0]
+                )
+              );
+              return (
+                <div className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs flex items-center justify-between font-mono">
+                  <span className="text-zinc-400">
+                    Distance ({userLocation ? "depuis votre position" : "depuis l'épicentre"}) :
+                  </span>
+                  <span className="font-bold text-emerald-300">{dist} m</span>
+                </div>
+              );
+            })()}
+
+            {/* Points d'eau, points de soin et pharmacies proches de cette issue */}
+            {(() => {
+              const nearbyPois = ALL_MAP_POI_ENTRIES.filter(
+                (p) =>
+                  ["WATER", "PHARMACY", "HOSPITAL"].includes(p.category) &&
+                  calculateHaversineDistance(
+                    selectedSafeExit.coordinates[1],
+                    selectedSafeExit.coordinates[0],
+                    p.coordinates[1],
+                    p.coordinates[0]
+                  ) <= MAP_UI_CONFIG.SAFE_EXITS.nearbyPoiHighlightRadiusMeters
+              );
+
+              return (
+                <div className="p-3 bg-zinc-900/90 border border-zinc-800 rounded-2xl space-y-2">
+                  <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+                    Points sanitaires proches (&lt; 350 m) :
+                  </div>
+                  {nearbyPois.length > 0 ? (
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                      {nearbyPois.map((p) => {
+                        const dist = Math.round(
+                          calculateHaversineDistance(
+                            selectedSafeExit.coordinates[1],
+                            selectedSafeExit.coordinates[0],
+                            p.coordinates[1],
+                            p.coordinates[0]
+                          )
+                        );
+                        return (
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between p-2 rounded-xl bg-black/50 border border-zinc-800 text-[11px]"
+                          >
+                            <span className="text-zinc-200 truncate flex items-center gap-1.5">
+                              <span>
+                                {p.category === "WATER"
+                                  ? "💧"
+                                  : p.category === "PHARMACY"
+                                  ? "💊"
+                                  : "🏥"}
+                              </span>
+                              <span className="truncate">{p.name}</span>
+                            </span>
+                            <span className="font-mono text-[10px] text-zinc-400 shrink-0 ml-1">
+                              {dist} m
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-zinc-500 italic">
+                      Aucun point d&apos;eau ou pharmacie répertorié dans un rayon de 350 m.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="pt-1 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (mapRef.current) {
+                    mapRef.current.flyTo({
+                      center: selectedSafeExit.coordinates,
+                      zoom: 16,
+                      essential: true,
+                    });
+                  }
+                  setSelectedSafeExit(null);
+                }}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg flex items-center justify-center gap-1.5 active:scale-95 min-h-[44px]"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                Centrer sur l&apos;issue
+              </button>
             </div>
           </div>
         </div>

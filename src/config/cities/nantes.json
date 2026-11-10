@@ -1438,5 +1438,55 @@
       "emergencyInfo": "Sanisette automatique accessible PMR."
     }
   ],
+  "safeExits": [
+    {
+      "id": "exit-graslin-ouest",
+      "name": "Sortie Ouest (Mellinet / Dobrée)",
+      "coordinates": [-1.5682, 47.2125],
+      "description": "Dégagement vers l'Ouest et Chantenay hors hypercentre"
+    },
+    {
+      "id": "exit-gare-nord",
+      "name": "Sortie Nord-Est (Gare Nord / Stalingrad)",
+      "coordinates": [-1.5415, 47.2185],
+      "description": "Évacuation vers le Jardin des Plantes et la gare"
+    },
+    {
+      "id": "exit-viarme-nord",
+      "name": "Sortie Nord (Place Viarme / Hauts-Pavés)",
+      "coordinates": [-1.5612, 47.2225],
+      "description": "Axe d'évacuation Nord vers le rond-point de Vannes"
+    },
+    {
+      "id": "exit-haudaudine-sud",
+      "name": "Sortie Sud (Pont Haudaudine / Île de Nantes)",
+      "coordinates": [-1.5545, 47.2065],
+      "description": "Franchissement Loire vers le quartier de la Création"
+    },
+    {
+      "id": "exit-anne-bretagne-sud",
+      "name": "Sortie Sud-Ouest (Pont Anne de Bretagne / Chantiers)",
+      "coordinates": [-1.5695, 47.2060],
+      "description": "Dégagement Ouest Loire vers le parc des Chantiers"
+    },
+    {
+      "id": "exit-erdre-versailles",
+      "name": "Sortie Nord-Est (Quai de Versailles / Erdre)",
+      "coordinates": [-1.5520, 47.2245],
+      "description": "Corridor vert le long de l'Erdre vers Saint-Mihiel"
+    },
+    {
+      "id": "exit-malakoff-est",
+      "name": "Sortie Est (Canal Saint-Félix / Malakoff)",
+      "coordinates": [-1.5375, 47.2145],
+      "description": "Évacuation le long du canal vers le stade Saupin"
+    },
+    {
+      "id": "exit-sanitat-chezin",
+      "name": "Sortie Chézine (Sanitat / Quai de la Fosse)",
+      "coordinates": [-1.5698, 47.2110],
+      "description": "Dégagement vers le parc de la Chézine"
+    }
+  ],
   "officialAttendance": null
 }

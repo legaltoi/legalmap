@@ -10,7 +10,8 @@ import { ObservatoryModal, ObservatoryTab } from "@/components/observatory/Obser
 import { IosInstallPrompt } from "@/components/IosInstallPrompt";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
-import { CortegeState, ReportCategory } from "@/types";
+import { CortegeState, ReportCategory, AdminZonesState } from "@/types";
+import { MAP_UI_CONFIG } from "@/config/mapUi";
 import { TacticalSector } from "@/config/data/nantes-carnets";
 import nantesData from "@/config/cities/nantes.json";
 
@@ -40,10 +41,17 @@ export default function HomePage() {
     updatedAt: Date.now(),
   });
 
+  // Zones éditables diffusées par l'admin (Interdiction de manifester & Dispersion)
+  const [adminZones, setAdminZones] = useState<AdminZonesState>({
+    prohibitedZone: null,
+    dispersionZone: null,
+    updatedAt: 0,
+  });
+
   // Calque « Topographie Tactique & Mémoire des Lieux » (désactivé par défaut)
   const [isTacticalLayerEnabled, setIsTacticalLayerEnabled] = useState<boolean>(false);
 
-  // Réhydratation locale de l'état officiel du cortège si reçu récemment (< 6h)
+  // Réhydratation locale de l'état officiel du cortège et des zones admin si reçus récemment
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -52,6 +60,13 @@ export default function HomePage() {
         const saved = JSON.parse(raw);
         if (saved && typeof saved === "object" && Date.now() - (saved.updatedAt || 0) < 6 * 3600 * 1000) {
           setCortegeState(saved);
+        }
+      }
+      const rawZones = localStorage.getItem(MAP_UI_CONFIG.STORAGE_KEYS.ADMIN_ZONES_CACHE);
+      if (rawZones) {
+        const savedZones = JSON.parse(rawZones);
+        if (savedZones && typeof savedZones === "object") {
+          setAdminZones(savedZones);
         }
       }
       const savedTopo = localStorage.getItem(TACTICAL_LAYER_STORAGE_KEY);
@@ -128,6 +143,9 @@ export default function HomePage() {
         }
       } catch {}
     },
+    onAdminZonesReceived: (zones) => {
+      setAdminZones(zones);
+    },
   });
 
   // Émission d'un signalement citoyen (zéro texte libre)
@@ -198,6 +216,7 @@ export default function HomePage() {
           consensusMarkers={publicMarkers}
           cortegeState={cortegeState}
           userLocation={userLocation}
+          adminZones={adminZones}
           isMapSelectActive={Boolean(activeCategoryToPoint)}
           onMapClickReport={handleMapClick}
           onTriggerReport={handleTriggerReport}

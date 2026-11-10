@@ -127,6 +127,62 @@ export interface POI {
 }
 
 /**
+ * Point d'issue ou corridor de dégagement logique
+ */
+export interface SafeExit {
+  id: string;
+  name: string;
+  coordinates: [number, number]; // [lng, lat]
+  description?: string;
+}
+
+/**
+ * Zone d'interdiction de manifester (Arrêté préfectoral)
+ */
+export interface ProhibitedZone {
+  id: string;
+  name?: string;
+  decreeRef?: string; // Référence de l'arrêté préfectoral
+  startTime?: string; // Ex: "10:00"
+  endTime?: string; // Ex: "20:00"
+  polygon: [number, number][]; // Liste ordonnée de coordonnées [lng, lat][] formant le polygone fermé
+  createdAt: number;
+}
+
+/**
+ * Zone de dispersion active (Ordre d'évacuation ou dispersion en cours)
+ */
+export interface DispersionZone {
+  id: string;
+  center: [number, number]; // [lng, lat]
+  radiusMeters: number;
+  activatedAt: number; // Timestamp d'activation
+  ttlDurationMs: number; // Durée de vie en ms (ex: 600_000ms = 10 min)
+  expiresAt: number; // activatedAt + ttlDurationMs
+  isActive: boolean;
+}
+
+/**
+ * État consolidé des zones administratives (Interdiction & Dispersion)
+ */
+export interface AdminZonesState {
+  prohibitedZone: ProhibitedZone | null;
+  dispersionZone: DispersionZone | null;
+  updatedAt: number;
+}
+
+/**
+ * Payload officiel des zones signé cryptographiquement (Ed25519)
+ */
+export interface SignedAdminZonesPayload {
+  data: AdminZonesState & {
+    timestamp: number;
+    nonce: string;
+  };
+  signature: string;
+}
+
+/**
  * Configuration cartographique et parcours officiel de la ville
  */
 export interface CityConfig {
@@ -155,4 +211,5 @@ export interface CityConfig {
     }>;
   };
   pois: POI[];
+  safeExits?: SafeExit[];
 }
