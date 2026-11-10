@@ -4,14 +4,16 @@
  * ZÉRO télémétrie, ZÉRO tracking.
  */
 
-const CACHE_NAME = "legalmaps-v1.0.2";
+const CACHE_NAME = "legalmaps-v1.0.3";
 
 const PRECACHE_URLS = [
   "./",
   "./manifest.json",
-  "./icons/icon.svg",
+  "./apple-touch-icon.png",
+  "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon.svg",
 ];
 
 // Installation : pré-mise en cache des ressources critiques

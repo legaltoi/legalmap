@@ -7,6 +7,7 @@ import { ActionDock } from "@/components/ActionDock";
 import { LegalSheet } from "@/components/LegalSheet";
 import { LegalNotice } from "@/components/LegalNotice";
 import { ObservatoryModal, ObservatoryTab } from "@/components/observatory/ObservatoryModal";
+import { IosInstallPrompt } from "@/components/IosInstallPrompt";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConsensus } from "@/hooks/useConsensus";
 import { CortegeState, ReportCategory } from "@/types";
@@ -239,6 +240,9 @@ export default function HomePage() {
         onFocusSectorOnMap={handleFocusSectorOnMap}
         onFocusCoordinatesOnMap={handleFocusCoordinatesOnMap}
       />
+
+      {/* 5. Guide d'installation iOS pour Safari (non-standalone) */}
+      <IosInstallPrompt />
     </main>
   );
 }

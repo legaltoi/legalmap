@@ -13,19 +13,27 @@ export const metadata: Metadata = {
   description:
     "Application citoyenne d'orientation, sécurité et réduction des risques pour manifestations et mouvements sociaux à Nantes.",
   manifest: `${basePath}/manifest.json`,
+  applicationName: "LEGALMAPS",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "LEGALMAPS",
   },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: [
       { url: `${basePath}/icons/icon.svg`, type: "image/svg+xml" },
+      { url: `${basePath}/icons/icon-180.png`, sizes: "180x180", type: "image/png" },
       { url: `${basePath}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
       { url: `${basePath}/icons/icon-512.png`, sizes: "512x512", type: "image/png" },
     ],
     apple: [
+      { url: `${basePath}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" },
+      { url: `${basePath}/icons/icon-180.png`, sizes: "180x180", type: "image/png" },
       { url: `${basePath}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${basePath}/apple-touch-icon-precomposed.png`, sizes: "180x180", type: "image/png" },
     ],
   },
 };
@@ -49,6 +57,14 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="LEGALMAPS" />
+        <meta name="application-name" content="LEGALMAPS" />
+        <meta name="format-detection" content="telephone=no" />
+        <link rel="apple-touch-icon" href={`${basePath}/apple-touch-icon.png`} />
+        <link rel="apple-touch-icon" sizes="180x180" href={`${basePath}/icons/icon-180.png`} />
+        <link rel="apple-touch-icon" sizes="192x192" href={`${basePath}/icons/icon-192.png`} />
+        <link rel="apple-touch-icon-precomposed" href={`${basePath}/apple-touch-icon-precomposed.png`} />
       </head>
       <body className="h-full w-full overflow-hidden select-none antialiased bg-black text-white overscroll-none">
         {children}
