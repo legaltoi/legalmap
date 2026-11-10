@@ -21,7 +21,14 @@ import {
   GraduationCap,
   ExternalLink,
   Check,
+  Droplet,
+  Pill,
+  HeartPulse,
+  Scale,
+  Toilet,
+  Layers,
 } from "lucide-react";
+import { FilterBar, FilterCategoryId } from "@/components/FilterBar";
 import { useWindData } from "@/hooks/useWindData";
 import { WindBadge } from "@/components/weather/WindBadge";
 import {
@@ -85,51 +92,147 @@ function buildTacticalSectorsGeoJson() {
   };
 }
 
+export function getCategoryIconSvg(category: FilterCategoryId, size: number = 14): string {
+  switch (category) {
+    case "WATER":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
+    case "PHARMACY":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`;
+    case "HOSPITAL":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5v14"/><path d="M5 12h14"/></svg>`;
+    case "EMERGENCY":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`;
+    case "TOILET":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12h10a4 4 0 0 1 4 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a4 4 0 0 1 4-4Z"/><path d="M9 12V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v7"/><path d="M12 19v3"/></svg>`;
+    case "LYCEE":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-.838L12.83 3.18a2 2 0 0 0-1.66 0L2.6 10.084a1 1 0 0 0 0 1.832l8.57 6.908a2 2 0 0 0 1.66 0l6.71-5.409a1 1 0 0 0 .387-1.157l-1.427-4.282"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`;
+    default:
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="6"/></svg>`;
+  }
+}
+
+export const CATEGORY_COLORS: Record<FilterCategoryId, { text: string; border: string; dot: string }> = {
+  ALL: {
+    text: "text-zinc-300",
+    border: "border-zinc-700/60",
+    dot: "bg-zinc-400",
+  },
+  WATER: {
+    text: "text-sky-300",
+    border: "border-sky-500/40",
+    dot: "bg-sky-400",
+  },
+  PHARMACY: {
+    text: "text-emerald-300",
+    border: "border-emerald-500/40",
+    dot: "bg-emerald-400",
+  },
+  HOSPITAL: {
+    text: "text-rose-300",
+    border: "border-rose-500/40",
+    dot: "bg-rose-400",
+  },
+  EMERGENCY: {
+    text: "text-violet-300",
+    border: "border-violet-500/40",
+    dot: "bg-violet-400",
+  },
+  TOILET: {
+    text: "text-zinc-300",
+    border: "border-zinc-500/40",
+    dot: "bg-zinc-400",
+  },
+  LYCEE: {
+    text: "text-amber-300",
+    border: "border-amber-500/40",
+    dot: "bg-amber-400",
+  },
+};
+
 export const POI_META: Record<
   POICategory,
-  { label: string; icon: string; border: string; bg: string; text: string; badge: string }
+  {
+    label: string;
+    border: string;
+    bg: string;
+    text: string;
+    badge: string;
+    dot: string;
+    IconComponent: React.ElementType;
+  }
 > = {
   WATER: {
     label: "Eau",
-    icon: "💧",
-    border: "border-sky-400/80",
-    bg: "bg-sky-950/85",
+    border: "border-sky-500/40",
+    bg: "bg-sky-950/80",
     text: "text-sky-300",
-    badge: "bg-sky-500/10 border-sky-500/30 text-sky-400",
+    badge: "bg-sky-500/10 border-sky-500/30 text-sky-300",
+    dot: "bg-sky-400",
+    IconComponent: Droplet,
   },
   PHARMACY: {
     label: "Pharmacie",
-    icon: "💊",
-    border: "border-emerald-400/80",
-    bg: "bg-emerald-950/85",
+    border: "border-emerald-500/40",
+    bg: "bg-emerald-950/80",
     text: "text-emerald-300",
-    badge: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
+    badge: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+    dot: "bg-emerald-400",
+    IconComponent: Pill,
   },
   HOSPITAL: {
     label: "Soins",
-    icon: "🏥",
-    border: "border-red-400/80",
-    bg: "bg-red-950/85",
-    text: "text-red-300",
-    badge: "bg-red-500/10 border-red-500/30 text-red-400",
+    border: "border-rose-500/40",
+    bg: "bg-rose-950/80",
+    text: "text-rose-300",
+    badge: "bg-rose-500/10 border-rose-500/30 text-rose-300",
+    dot: "bg-rose-400",
+    IconComponent: HeartPulse,
   },
   EMERGENCY: {
     label: "Juridique",
-    icon: "⚖️",
-    border: "border-purple-400/80",
-    bg: "bg-purple-950/85",
-    text: "text-purple-300",
-    badge: "bg-purple-500/10 border-purple-500/30 text-purple-400",
+    border: "border-violet-500/40",
+    bg: "bg-violet-950/80",
+    text: "text-violet-300",
+    badge: "bg-violet-500/10 border-violet-500/30 text-violet-300",
+    dot: "bg-violet-400",
+    IconComponent: Scale,
   },
   TOILET: {
     label: "WC",
-    icon: "🚻",
-    border: "border-zinc-500/80",
+    border: "border-zinc-500/40",
     bg: "bg-zinc-900/90",
     text: "text-zinc-300",
-    badge: "bg-zinc-500/10 border-zinc-500/30 text-zinc-400",
+    badge: "bg-zinc-500/10 border-zinc-500/30 text-zinc-300",
+    dot: "bg-zinc-400",
+    IconComponent: Toilet,
   },
 };
+
+export interface MapPoiEntry {
+  id: string;
+  name: string;
+  category: FilterCategoryId;
+  coordinates: [number, number];
+  rawPoi?: POI;
+  rawLycee?: LyceeItem;
+}
+
+export const ALL_MAP_POI_ENTRIES: MapPoiEntry[] = [
+  ...nantesData.pois.map((poi) => ({
+    id: poi.id,
+    name: poi.name,
+    category: poi.category as FilterCategoryId,
+    coordinates: poi.coordinates as [number, number],
+    rawPoi: poi as POI,
+  })),
+  ...NANTES_LYCEES.map((lycee) => ({
+    id: lycee.id,
+    name: lycee.name,
+    category: "LYCEE" as FilterCategoryId,
+    coordinates: lycee.coordinates as [number, number],
+    rawLycee: lycee,
+  })),
+];
 
 // Enregistrement du protocole PMTiles natif
 let isProtocolAdded = false;
@@ -183,12 +286,48 @@ export function MapView({
   const cortegeHeadMarkerRef = useRef<maplibregl.Marker | null>(null);
   const cortegeTailMarkerRef = useRef<maplibregl.Marker | null>(null);
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const poiItemsRef = useRef<Map<string, { marker: maplibregl.Marker; category: POICategory }>>(new Map());
-  const lyceeMarkersRef = useRef<Map<string, { marker: maplibregl.Marker; lycee: LyceeItem }>>(new Map());
+  const activePoiMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const updatePoiMarkersRef = useRef<() => void>(() => {});
   const tacticalMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const windMarkersRef = useRef<maplibregl.Marker[]>([]);
 
-  const [poiCategoryFilter, setPoiCategoryFilter] = useState<"ALL" | "LYCEE" | POICategory>("ALL");
+  const [selectedFilterCategories, setSelectedFilterCategories] = useState<FilterCategoryId[]>(["ALL"]);
+
+  const handleToggleFilterCategory = useCallback((category: FilterCategoryId) => {
+    setSelectedFilterCategories((prev) => {
+      if (category === "ALL") {
+        return ["ALL"];
+      }
+      const withoutAll = prev.filter((c) => c !== "ALL");
+      const exists = withoutAll.includes(category);
+      let next: FilterCategoryId[];
+      if (exists) {
+        next = withoutAll.filter((c) => c !== category);
+      } else {
+        next = [...withoutAll, category];
+      }
+      return next.length === 0 ? ["ALL"] : next;
+    });
+  }, []);
+
+  const filterCounts = React.useMemo(() => {
+    const counts: Record<FilterCategoryId, number> = {
+      ALL: ALL_MAP_POI_ENTRIES.length,
+      LYCEE: NANTES_LYCEES.length,
+      WATER: 0,
+      PHARMACY: 0,
+      HOSPITAL: 0,
+      EMERGENCY: 0,
+      TOILET: 0,
+    };
+    nantesData.pois.forEach((poi) => {
+      const cat = poi.category as FilterCategoryId;
+      if (counts[cat] !== undefined) {
+        counts[cat] += 1;
+      }
+    });
+    return counts;
+  }, []);
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [selectedLycee, setSelectedLycee] = useState<LyceeItem | null>(null);
   const [selectedCamera, setSelectedCamera] = useState<SundersCameraNode | null>(null);
@@ -553,66 +692,18 @@ export function MapView({
         });
       }
 
-      // 4. Création des POIs statiques (Eau, Pharmacie, Soins, Juridique, WC)
-      if (poiItemsRef.current.size === 0) {
-        nantesData.pois.forEach((poi) => {
-          const cat = poi.category as POICategory;
-          const meta = POI_META[cat] || POI_META.WATER;
-
-          const el = document.createElement("div");
-          el.className =
-            "poi-marker cursor-pointer group transition-transform duration-150 hover:scale-125 z-10 hover:z-30";
-          el.setAttribute("title", poi.name);
-
-          el.innerHTML = `
-            <div class="w-6 h-6 rounded-full border ${meta.border} ${meta.bg} flex items-center justify-center shadow-md backdrop-blur-sm text-[11px] select-none hover:border-white transition-colors">
-              ${meta.icon}
-            </div>
-          `;
-
-          el.addEventListener("click", (e) => {
-            e.stopPropagation();
-            setSelectedPoi(poi as POI);
-          });
-
-          const marker = new maplibregl.Marker({ element: el })
-            .setLngLat(poi.coordinates as [number, number])
-            .addTo(map);
-
-          poiItemsRef.current.set(poi.id, { marker, category: cat });
-        });
-      }
-
-      // 5. Création des 26 Lycées de Nantes (Signalement Blocus au bout de 5 users)
-      if (lyceeMarkersRef.current.size === 0) {
-        NANTES_LYCEES.forEach((lycee) => {
-          const el = document.createElement("div");
-          el.className =
-            "lycee-marker cursor-pointer group transition-transform duration-150 hover:scale-115 z-15 hover:z-30";
-          el.setAttribute("title", `${lycee.name} (${lycee.district})`);
-
-          el.innerHTML = `
-            <div class="w-7 h-7 rounded-full border border-orange-400/75 bg-orange-950/90 flex items-center justify-center shadow-md backdrop-blur-sm text-xs select-none hover:border-white transition-colors">
-              🎓
-            </div>
-          `;
-
-          el.addEventListener("click", (e) => {
-            e.stopPropagation();
-            setSelectedLycee(lycee);
-          });
-
-          const marker = new maplibregl.Marker({ element: el })
-            .setLngLat(lycee.coordinates)
-            .addTo(map);
-
-          lyceeMarkersRef.current.set(lycee.id, { marker, lycee });
-        });
-      }
+      // 4. Synchronisation initiale des POIs et Lycées
+      updatePoiMarkersRef.current?.();
     };
 
     map.on("load", attachLayersAndPois);
     map.on("styledata", attachLayersAndPois);
+
+    const onMapMoveOrZoom = () => {
+      updatePoiMarkersRef.current?.();
+    };
+    map.on("zoomend", onMapMoveOrZoom);
+    map.on("moveend", onMapMoveOrZoom);
 
     // Interaction au clic sur un nœud de caméra SunderS
     map.on("click", "sunders-cameras-circle", (e) => {
@@ -660,10 +751,10 @@ export function MapView({
       clearTimeout(resizeTimer2);
       clearTimeout(resizeTimer3);
       window.removeEventListener("resize", triggerResize);
-      poiItemsRef.current.forEach(({ marker }) => marker.remove());
-      poiItemsRef.current.clear();
-      lyceeMarkersRef.current.forEach(({ marker }) => marker.remove());
-      lyceeMarkersRef.current.clear();
+      map.off("zoomend", onMapMoveOrZoom);
+      map.off("moveend", onMapMoveOrZoom);
+      activePoiMarkersRef.current.forEach((marker) => marker.remove());
+      activePoiMarkersRef.current.clear();
       tacticalMarkersRef.current.forEach((m) => m.remove());
       tacticalMarkersRef.current.clear();
       windMarkersRef.current.forEach((m) => m.remove());
@@ -799,26 +890,6 @@ export function MapView({
     }
   }, [isTacticalLayerEnabled, mapLoaded]);
 
-  // Filtrage dynamique des POIs et des Lycées sur la carte
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    poiItemsRef.current.forEach(({ marker, category }) => {
-      const isVisible = poiCategoryFilter === "ALL" || poiCategoryFilter === category;
-      const el = marker.getElement();
-      if (el) {
-        el.style.display = isVisible ? "block" : "none";
-      }
-    });
-
-    lyceeMarkersRef.current.forEach(({ marker }) => {
-      const isVisible = poiCategoryFilter === "ALL" || poiCategoryFilter === "LYCEE";
-      const el = marker.getElement();
-      if (el) {
-        el.style.display = isVisible ? "block" : "none";
-      }
-    });
-  }, [poiCategoryFilter, mapLoaded]);
 
   // Détection & mise à jour du pointeur GPS utilisateur
   useEffect(() => {
@@ -888,62 +959,290 @@ export function MapView({
     }
   }, [isWindEnabled, windData, mapLoaded]);
 
-  // Mise à jour de l'état de Blocus des Lycées sur la carte (visible en BLOCUS dès 5 signalements users)
-  useEffect(() => {
+  // Moteur d'affichage dynamique, zoom-adaptatif et anti-collision des POIs et Lycées
+  const updatePoiMarkers = useCallback(() => {
     if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+    const zoom = map.getZoom();
 
-    const blocusClusters = consensusMarkers.filter(
-      (m) => m.category === "BLOCUS_LYCEE"
-    );
-    const showNameLabels = poiCategoryFilter === "LYCEE";
+    const isAll =
+      selectedFilterCategories.length === 0 ||
+      selectedFilterCategories.includes("ALL");
 
-    lyceeMarkersRef.current.forEach(({ marker, lycee }) => {
-      const el = marker.getElement();
-      if (!el) return;
+    // 1. Filtrer les entrées éligibles
+    const visibleEntries = ALL_MAP_POI_ENTRIES.filter((entry) => {
+      if (isAll) return true;
+      return selectedFilterCategories.includes(entry.category);
+    });
 
-      const match = blocusClusters.find(
+    // Helper blocus lycée (validé dès le seuil de signalements)
+    const getLyceeBlocusInfo = (entry: MapPoiEntry) => {
+      if (entry.category !== "LYCEE") return { isActive: false, count: 0 };
+      const match = consensusMarkers.find(
         (m) =>
+          m.category === "BLOCUS_LYCEE" &&
           calculateHaversineDistance(
-            lycee.coordinates[1],
-            lycee.coordinates[0],
+            entry.coordinates[1],
+            entry.coordinates[0],
             m.lat,
             m.lng
           ) <= 180
       );
-
       const count = match ? match.reportCount : 0;
-      const isBlocusActive = count >= CONSENSUS_CONFIG.BLOCUS_REPORTS_THRESHOLD;
+      return {
+        isActive: count >= CONSENSUS_CONFIG.BLOCUS_REPORTS_THRESHOLD,
+        count,
+      };
+    };
 
-      if (isBlocusActive) {
-        // Dès 5 signalements utilisateurs : le Blocus du lycée s'affiche clairement sur la carte
-        el.innerHTML = `
-          <div class="relative flex items-center justify-center">
-            <div class="absolute -inset-1 rounded-full bg-orange-500/35 animate-ping"></div>
-            <div class="lycee-pill relative z-10 px-2.5 py-1 rounded-full border-2 border-orange-400 bg-orange-950/95 flex items-center gap-1.5 shadow-xl text-[11px] font-black text-white select-none whitespace-nowrap" style="box-shadow: 0 0 14px rgba(249,115,22,0.55);">
-              <span>🚧</span>
-              <span>${lycee.shortName}</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-orange-500 text-black text-[9px] font-mono font-black">BLOCUS (${count})</span>
-            </div>
-          </div>
-        `;
-      } else if (showNameLabels) {
-        // Vue filtrée « Lycées » : affiche le nom court de chaque établissement
-        el.innerHTML = `
-          <div class="lycee-pill px-2.5 py-1 rounded-full border border-orange-400/70 bg-zinc-950/95 flex items-center gap-1.5 shadow-lg text-[11px] font-bold text-orange-200 select-none hover:border-orange-300 transition-all whitespace-nowrap">
-            <span>🎓</span>
-            <span>${lycee.shortName}</span>
-          </div>
-        `;
-      } else {
-        // Vue « Tous » : pastille circulaire épurée pour garder la carte aérée sur mobile
-        el.innerHTML = `
-          <div class="w-7 h-7 rounded-full border border-orange-400/75 bg-orange-950/90 flex items-center justify-center shadow-md backdrop-blur-sm text-xs select-none hover:border-white transition-colors">
-            🎓
-          </div>
-        `;
+    // Zoom Tiers :
+    // Tier 1 : zoom < 13.5 (micro-points ou clusters numérotés)
+    // Tier 2 : 13.5 <= zoom < 15.5 (pastille 20px monochrome sans label)
+    // Tier 3 : zoom >= 15.5 (pastille 26px monochrome avec icône complète sans label permanent)
+    const tier = zoom < 13.5 ? 1 : zoom < 15.5 ? 2 : 3;
+
+    const nextMarkers = new Map<string, maplibregl.Marker>();
+
+    if (tier === 1 && isAll) {
+      // Clustering pour le mode "Tous" à faible zoom afin d'éviter toute surcharge
+      interface PoiClusterItem {
+        id: string;
+        lng: number;
+        lat: number;
+        screenX: number;
+        screenY: number;
+        entries: MapPoiEntry[];
+        activeBlocusLycee?: { entry: MapPoiEntry; count: number };
       }
-    });
-  }, [consensusMarkers, poiCategoryFilter, mapLoaded]);
+
+      const clusters: PoiClusterItem[] = [];
+      const CLUSTER_DISTANCE_PX = 26;
+
+      visibleEntries.forEach((entry) => {
+        const blocusInfo = getLyceeBlocusInfo(entry);
+        const p = map.project(entry.coordinates);
+
+        // Blocus avéré : point prioritaire autonome non masqué
+        if (blocusInfo.isActive) {
+          clusters.push({
+            id: `blocus-${entry.id}`,
+            lng: entry.coordinates[0],
+            lat: entry.coordinates[1],
+            screenX: p.x,
+            screenY: p.y,
+            entries: [entry],
+            activeBlocusLycee: { entry, count: blocusInfo.count },
+          });
+          return;
+        }
+
+        const nearest = clusters.find(
+          (c) =>
+            !c.activeBlocusLycee &&
+            Math.hypot(c.screenX - p.x, c.screenY - p.y) < CLUSTER_DISTANCE_PX
+        );
+
+        if (nearest) {
+          nearest.entries.push(entry);
+          const count = nearest.entries.length;
+          nearest.lng = (nearest.lng * (count - 1) + entry.coordinates[0]) / count;
+          nearest.lat = (nearest.lat * (count - 1) + entry.coordinates[1]) / count;
+          const proj = map.project([nearest.lng, nearest.lat]);
+          nearest.screenX = proj.x;
+          nearest.screenY = proj.y;
+        } else {
+          clusters.push({
+            id: `c-${entry.id}`,
+            lng: entry.coordinates[0],
+            lat: entry.coordinates[1],
+            screenX: p.x,
+            screenY: p.y,
+            entries: [entry],
+          });
+        }
+      });
+
+      clusters.forEach((cluster) => {
+        const clusterKey = `tier1-${cluster.id}-${cluster.entries.length}`;
+
+        if (activePoiMarkersRef.current.has(clusterKey)) {
+          nextMarkers.set(clusterKey, activePoiMarkersRef.current.get(clusterKey)!);
+          return;
+        }
+
+        const el = document.createElement("div");
+        // Cible tactile >= 44px
+        el.className =
+          "poi-marker-hit w-11 h-11 -m-[11px] flex items-center justify-center cursor-pointer select-none touch-manipulation z-10 hover:z-20";
+
+        if (cluster.activeBlocusLycee) {
+          const { entry, count } = cluster.activeBlocusLycee;
+          el.setAttribute("title", `Blocus : ${entry.name} (${count} signalements)`);
+          el.innerHTML = `
+            <div class="relative flex items-center justify-center">
+              <div class="absolute w-5 h-5 rounded-full bg-amber-500/35 animate-ping"></div>
+              <div class="w-3.5 h-3.5 rounded-full bg-amber-500 border border-white shadow-md flex items-center justify-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-black"></span>
+              </div>
+            </div>
+          `;
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (entry.rawLycee) setSelectedLycee(entry.rawLycee);
+          });
+        } else if (cluster.entries.length > 1) {
+          el.setAttribute("title", `${cluster.entries.length} points d'intérêt`);
+          el.innerHTML = `
+            <div class="w-[18px] h-[18px] rounded-full bg-zinc-950/95 border border-zinc-700/80 text-[10px] font-mono font-bold text-zinc-300 flex items-center justify-center shadow-sm backdrop-blur-sm hover:border-zinc-500 hover:text-white transition-colors">
+              ${cluster.entries.length}
+            </div>
+          `;
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            map.easeTo({
+              center: [cluster.lng, cluster.lat],
+              zoom: Math.min(map.getZoom() + 2, 14.5),
+              duration: 350,
+            });
+          });
+        } else {
+          const entry = cluster.entries[0];
+          const color = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.ALL;
+          el.setAttribute("title", entry.name);
+          el.innerHTML = `
+            <div class="w-[7px] h-[7px] rounded-full bg-zinc-950 border border-zinc-700/90 flex items-center justify-center shadow-sm">
+              <div class="w-[3.5px] h-[3.5px] rounded-full ${color.dot}"></div>
+            </div>
+          `;
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (entry.rawPoi) setSelectedPoi(entry.rawPoi);
+            else if (entry.rawLycee) setSelectedLycee(entry.rawLycee);
+          });
+        }
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([cluster.lng, cluster.lat]);
+        nextMarkers.set(clusterKey, marker);
+      });
+    } else {
+      // Tier 2 (13.5-15.5) ou Tier 3 (>= 15.5), ou Tier 1 avec filtre de catégorie actif
+      const collisionThreshold = tier === 3 ? 24 : 18;
+      const offsetAmount = tier === 3 ? 10 : 8;
+
+      interface PlacedItem {
+        entry: MapPoiEntry;
+        screenX: number;
+        screenY: number;
+        offset: [number, number];
+      }
+      const placed: PlacedItem[] = [];
+
+      visibleEntries.forEach((entry) => {
+        const p = map.project(entry.coordinates);
+        let offset: [number, number] = [0, 0];
+
+        const colliding = placed.filter(
+          (other) =>
+            Math.hypot(other.screenX - p.x, other.screenY - p.y) < collisionThreshold
+        );
+
+        if (colliding.length === 1) {
+          colliding[0].offset = [-offsetAmount, 0];
+          offset = [offsetAmount, 0];
+        } else if (colliding.length === 2) {
+          offset = [0, offsetAmount];
+        } else if (colliding.length >= 3) {
+          offset = [0, -offsetAmount];
+        }
+
+        placed.push({
+          entry,
+          screenX: p.x,
+          screenY: p.y,
+          offset,
+        });
+      });
+
+      placed.forEach(({ entry, offset }) => {
+        const blocusInfo = getLyceeBlocusInfo(entry);
+        const markerKey = `tier${tier}-${entry.id}-${blocusInfo.isActive ? "blocus" : "normal"}`;
+
+        if (activePoiMarkersRef.current.has(markerKey)) {
+          const existing = activePoiMarkersRef.current.get(markerKey)!;
+          existing.setOffset(offset);
+          nextMarkers.set(markerKey, existing);
+          return;
+        }
+
+        const color = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.ALL;
+        const iconSvg = getCategoryIconSvg(entry.category, tier === 3 ? 14 : 11);
+
+        const el = document.createElement("div");
+        el.className =
+          "poi-marker-hit w-11 h-11 -m-[11px] flex items-center justify-center cursor-pointer select-none touch-manipulation z-10 hover:z-25 transition-transform duration-150 active:scale-95";
+        el.setAttribute("title", entry.name);
+
+        if (blocusInfo.isActive) {
+          el.innerHTML = `
+            <div class="relative flex items-center justify-center">
+              <div class="absolute -inset-1 rounded-full bg-amber-500/35 animate-ping"></div>
+              <div class="h-6 px-2 rounded-full border border-amber-400 bg-amber-950/95 flex items-center gap-1 shadow-lg text-amber-200">
+                <span class="w-3.5 h-3.5 flex items-center justify-center text-amber-300">
+                  ${getCategoryIconSvg("LYCEE", 12)}
+                </span>
+                <span class="text-[10px] font-mono font-bold">BLOCUS (${blocusInfo.count})</span>
+              </div>
+            </div>
+          `;
+        } else if (tier === 3) {
+          el.innerHTML = `
+            <div class="w-[26px] h-[26px] rounded-full bg-zinc-950/95 border ${color.border} flex items-center justify-center shadow-md backdrop-blur-sm text-zinc-300 ${color.text} hover:border-zinc-400 hover:text-white transition-all">
+              ${iconSvg}
+            </div>
+          `;
+        } else {
+          el.innerHTML = `
+            <div class="w-5 h-5 rounded-full bg-zinc-950/90 border ${color.border} flex items-center justify-center shadow-sm backdrop-blur-sm text-zinc-400 ${color.text} hover:border-zinc-400 hover:text-white transition-all">
+              ${iconSvg}
+            </div>
+          `;
+        }
+
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (entry.rawPoi) setSelectedPoi(entry.rawPoi);
+          else if (entry.rawLycee) setSelectedLycee(entry.rawLycee);
+        });
+
+        const marker = new maplibregl.Marker({ element: el, offset })
+          .setLngLat(entry.coordinates);
+        nextMarkers.set(markerKey, marker);
+      });
+    }
+
+    const currentMarkers = activePoiMarkersRef.current;
+    const nextKeys = new Set(nextMarkers.keys());
+
+    for (const [key, marker] of currentMarkers.entries()) {
+      if (!nextKeys.has(key)) {
+        marker.remove();
+        currentMarkers.delete(key);
+      }
+    }
+
+    for (const [key, marker] of nextMarkers.entries()) {
+      if (!currentMarkers.has(key)) {
+        marker.addTo(map);
+        currentMarkers.set(key, marker);
+      }
+    }
+  }, [selectedFilterCategories, consensusMarkers, mapLoaded]);
+
+  useEffect(() => {
+    updatePoiMarkersRef.current = updatePoiMarkers;
+    updatePoiMarkers();
+  }, [updatePoiMarkers]);
 
   // Synchronisation des marqueurs de consensus de rue (hors BLOCUS_LYCEE qui est porté par chaque lycée)
   useEffect(() => {
@@ -1190,65 +1489,13 @@ export function MapView({
         />
       )}
 
-      {/* Barre de filtres aérée, lisible et alignée sous la Topbar */}
-      <div
-        className="absolute left-0 right-0 z-20 pointer-events-none px-2.5 sm:px-4"
-        style={{ top: "calc(max(10px, env(safe-area-inset-top, 10px)) + 68px)" }}
-      >
-        <div className="pointer-events-auto max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          <button
-            onClick={() => setPoiCategoryFilter("ALL")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all whitespace-nowrap shadow-md min-h-[36px] flex items-center ${
-              poiCategoryFilter === "ALL"
-                ? "bg-white text-black border-white"
-                : "bg-zinc-950/90 text-zinc-200 border-zinc-800 hover:border-zinc-700 hover:text-white"
-            }`}
-          >
-            Tous
-          </button>
-
-          {/* Filtre Lycées & Blocus */}
-          <button
-            onClick={() =>
-              setPoiCategoryFilter(poiCategoryFilter === "LYCEE" ? "ALL" : "LYCEE")
-            }
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[36px] ${
-              poiCategoryFilter === "LYCEE"
-                ? "bg-orange-950 text-orange-200 border-orange-400"
-                : activeBlocusLyceesCount > 0
-                ? "bg-orange-950/90 text-orange-200 border-orange-500 animate-pulse"
-                : "bg-zinc-950/90 text-zinc-200 border-zinc-800 hover:border-zinc-700 hover:text-orange-300"
-            }`}
-          >
-            <span>🎓</span>
-            <span>Lycées</span>
-            <span className="text-[10px] font-mono opacity-85">
-              {activeBlocusLyceesCount > 0
-                ? `(${activeBlocusLyceesCount} blocus)`
-                : `(${NANTES_LYCEES.length})`}
-            </span>
-          </button>
-
-          {(["WATER", "PHARMACY", "HOSPITAL", "EMERGENCY", "TOILET"] as POICategory[]).map((cat) => {
-            const meta = POI_META[cat];
-            const isActive = poiCategoryFilter === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setPoiCategoryFilter(isActive ? "ALL" : cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md min-h-[36px] ${
-                  isActive
-                    ? `${meta.bg} ${meta.text} border-current`
-                    : "bg-zinc-950/90 text-zinc-200 border-zinc-800 hover:border-zinc-700 hover:text-white"
-                }`}
-              >
-                <span>{meta.icon}</span>
-                <span>{meta.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Barre de filtres POI moderne, discrète et accessible */}
+      <FilterBar
+        selectedCategories={selectedFilterCategories}
+        onToggleCategory={handleToggleFilterCategory}
+        counts={filterCounts}
+        activeBlocusCount={activeBlocusLyceesCount}
+      />
 
       {/* Boutons d'action flottants latéraux (Caméras SunderS, Zones, Vent, GPS, Recentrement) */}
       <div className="absolute right-2.5 sm:right-4 bottom-[104px] sm:bottom-28 z-20 flex flex-col gap-2.5">
@@ -1366,8 +1613,9 @@ export function MapView({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-orange-500/15 text-orange-300 border border-orange-500/30">
-                    🎓 Lycée {selectedLycee.type} • {selectedLycee.district}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    <span>Lycée {selectedLycee.type} • {selectedLycee.district}</span>
                   </span>
                 </div>
                 <h4 className="font-black text-sm text-white mt-1.5">
@@ -1444,7 +1692,7 @@ export function MapView({
                   className="flex-1 py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-500 active:scale-95 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-1.5"
                 >
                   <GraduationCap className="w-4 h-4" />
-                  {isReportingBlocus ? "Envoi..." : "🚧 Signaler un blocus ici"}
+                  <span>{isReportingBlocus ? "Envoi..." : "Signaler un blocus ici"}</span>
                 </button>
               )}
             </div>
@@ -1627,14 +1875,20 @@ export function MapView({
           <div className="w-full max-w-sm bg-[#101014] border border-zinc-700 rounded-3xl p-4 shadow-2xl text-zinc-100 animate-in fade-in slide-in-from-bottom-2">
             <div className="flex items-start justify-between">
               <div>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono border ${
-                    POI_META[selectedPoi.category]?.badge || "text-cyan-400 border-cyan-500/30"
-                  }`}
-                >
-                  <span>{POI_META[selectedPoi.category]?.icon}</span>
-                  <span>{POI_META[selectedPoi.category]?.label || "Point Utile"}</span>
-                </span>
+                {(() => {
+                  const meta = POI_META[selectedPoi.category];
+                  const IconComp = meta?.IconComponent || Landmark;
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono border ${
+                        meta?.badge || "text-cyan-400 border-cyan-500/30"
+                      }`}
+                    >
+                      <IconComp className="w-3.5 h-3.5" />
+                      <span>{meta?.label || "Point Utile"}</span>
+                    </span>
+                  );
+                })()}
                 <h4 className="font-bold text-sm text-white mt-1.5">{selectedPoi.name}</h4>
                 <p className="text-xs text-zinc-400 mt-0.5">{selectedPoi.address}</p>
               </div>
