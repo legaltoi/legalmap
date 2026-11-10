@@ -1,161 +1,127 @@
-# 🛡️ LEGALMAPS — Information, Sécurité & Orientation Citoyenne
+# 🛡️ LEGALMAPS — La carte citoyenne, libre et anonyme
 
-> **Application web progressive (PWA) d'information citoyenne, de sécurité et d'orientation pour les manifestations et mouvements sociaux, initialement configurée pour la métropole de Nantes.**
-
----
-
-## 🏛️ Les 4 Piliers du Blindage Juridique Strict (Droit Français)
-
-Pour garantir une immunité juridique absolue à l'éditeur et aux usagers :
-
-1. **Interdiction absolue du texte libre** : Aucun champ de saisie libre, aucun tchat, aucun formulaire de commentaire. Les interactions reposent exclusivement sur 4 boutons d'état pré-définis. Cela exclut d'office toute infraction à la loi du 29 juillet 1881 sur la liberté de la presse (diffamation, injures, provocation à des délits, appels à la violence).
-2. **Qualification factuelle et sanitaire des signalements** :
-   - **Interdit** : Désigner ou cibler des unités de police (ex. : « BAC », « CRS », « BRAV-M »), ce qui pourrait être qualifié d'aide au ciblage ou de guet-apens pénal.
-   - **Obligatoire** : Qualifier uniquement des **obstacles matériels de voirie** ou des **risques sanitaires objectifs** :
-     - `ZONE_GAZ` : Présence d'émanations de gaz lacrymogènes / canon à eau (réduction des risques sanitaires).
-     - `VOIE_BLOQUEE` : Rue impraticable, nasse, circulation coupée (liberté d'aller et venir / sécurité des personnes).
-     - `POINT_BLOCAGE` : Rassemblement citoyen fixe / blocage revendicatif pacifique (lycées, carrefours, gares).
-     - `SECOURS_MEDIC` : Présence de secouristes bénévoles / premiers soins actifs.
-3. **Statut d'éditeur non professionnel (Article 6-III-2 LCEN)** :
-   - Modale légale intégrée stipulant le statut d'éditeur non professionnel préservant son anonymat personnel, et mentionnant les coordonnées d'identification de l'hébergeur public (Vercel / Cloudflare).
-4. **RGPD & Privacy-by-Design radical** :
-   - Aucun cookie de session, aucun local storage contenant des identifiants uniques.
-   - La géolocalisation reste **100 % locale** (calculée dans le navigateur). En cas d'envoi d'un signalement, seules les coordonnées GPS brutes arrondies (3 décimales, précision ~100m) sont transmises au flux éphémère.
+> **L'application simple et gratuite pour s'orienter, éviter les dangers et connaître ses droits pendant les manifestations (à Nantes).**  
+> Sans inscription • Sans téléchargement sur les stores • Sans aucune trace • Fonctionne même sans réseau.
 
 ---
 
-## 🔒 Durcissement Cybersécurité & Anti-Sybil
+## 💡 C'est quoi LegalMaps en 30 secondes ?
 
-1. **Authentification Asymétrique Ed25519 de l'Organisateur** :
-   - Zéro mot de passe ou clé secrète dans le bundle client.
-   - Clé publique `NEXT_PUBLIC_ADMIN_VERIFY_KEY` intégrée dans l'application.
-   - Clé privée résidant **uniquement** dans l'ancre d'URL de l'organisateur (`/admin#priv=CLE_PRIVEE_HEX`).
-   - Tout ordre de régulation (cortège mobile/immobile, tête, fin) est **signé cryptographiquement** avec un nonce et vérifié par tous les clients.
-   - Fenêtre anti-rejeu stricte : messages rejetés s'ils datent de plus de 60 secondes.
-2. **Preuve de Travail Anti-Sybil (PoW Hashcash)** :
-   - Avant de diffuser un signalement, le terminal résout un challenge SHA-256 dans un Web Worker (`public/pow-worker.js`).
-   - Coût imperceptible pour un citoyen (~200ms), mais mathématiquement rédhibitoire pour un bot cherchant à inonder le réseau de faux signalements.
-3. **Périmètre Géographique Strict (Bounding Box Nantes)** :
-   - Rejet immédiat de tout signalement hors de l'agglomération nantaise (`[47.15, -1.65]` à `[47.28, -1.45]`).
-4. **Sanitization Stricte Zod (.strict())** :
-   - Rejet de tout message comportant des champs superflus, des types anormaux ou des tentatives d'injection XSS.
-5. **Content Security Policy (CSP) Stricte & Isolation HTTP** :
-   - Blocage de tout appel tiers non autorisé, interdiction d'inclusion dans une iframe (`frame-ancestors 'none'`), `Permissions-Policy` restrictive.
+Quand on est en manifestation, c'est souvent la confusion :
+- *Où est la tête du cortège ?*
+- *Est-ce que cette rue est bloquée ?*
+- *Où trouver de l'eau pour se rincer les yeux ou une pharmacie ouverte ?*
+- *Qu'est-ce que j'ai le droit de dire ou de faire si je suis contrôlé ?*
+
+**LegalMaps** est une carte interactive conçue pour répondre à ces questions en temps réel. Elle est pensée pour être **100 % protectrice de votre vie privée**, **inattaquable sur le plan juridique** et utilisable par n'importe qui en deux secondes sur son smartphone.
 
 ---
 
-## 🚀 Stack Technique & Performance
+## 🔒 Les 5 Règles d'Or (Pourquoi c'est 100 % légal et sûr)
 
-- **Framework** : [Next.js](https://nextjs.org/) 15 (App Router, React 19, TypeScript).
-- **Cryptographie** : `@noble/ed25519` + `@noble/hashes` (Ed25519, SHA-512, SHA-256 Hashcash).
-- **Validation** : [Zod](https://zod.dev/) pour la sanitization des flux entrants.
-- **Styling** : [Tailwind CSS](https://tailwindcss.com/) (thème sombre OLED pour économiser la batterie sur mobile et garantir un contraste maximal en plein soleil).
-- **Cartographie** : [MapLibre GL](https://maplibre.org/) + protocole [PMTiles](https://protomaps.com/) pour tuiles vectorielles locales servies depuis `/public/tiles/nantes.pmtiles`.
-- **Temps réel (100 % gratuit & sans base)** : Supabase Realtime via le protocole **Broadcast pur** (données en mémoire vive éphémère de client à client, zéro écriture en base SQL, zéro log d'IP, zéro coût).
-- **PWA & Offline** : Service Worker personnalisé (`/public/sw.js`) assurant la mise en cache complète des fiches juridiques, des assets et de la cartographie.
+### 1. 🤐 Pas de tchat libre = Zéro débordement
+Sur LegalMaps, **il n'y a aucun champ de texte**, aucun tchat, aucun espace commentaire. 
+- Vous ne pouvez pas écrire de message : vous cliquez simplement sur un des **4 boutons d'état prévus** (*Gaz*, *Rue bloquée*, *Point de rassemblement*, *Secours*).
+- **Pourquoi c'est capital ?** Parce que cela élimine à la source les insultes, les fausses rumeurs, les appels à la violence et toute infraction à la loi. L'application reste strictement un outil de sécurité civile.
 
----
+### 2. 🚦 On signale des obstacles matériels, jamais des personnes
+- **Interdit strict** : L'application n'affiche et ne permet JAMAIS de signaler des policiers ou des personnes (pas de mention de CRS, BAC, etc.).
+- **Autorisé et encouragé** : Signaler des **faits matériels et sanitaires** pour protéger les gens (un nuage de gaz lacrymogène pour éviter d'y envoyer des enfants ou personnes asthmatiques, une rue bouchée pour éviter les mouvements de panique).
 
-## ⚙️ Spécifications Fonctionnelles
+### 3. 👻 Zéro compte, zéro flicage (La technologie fantôme)
+- **Aucune inscription** : Pas de nom, pas de mot de passe, pas de numéro de téléphone, pas d'e-mail.
+- **Aucun cookie espion** : Rien ne suit votre navigation.
+- **Votre position reste chez vous** : Votre position GPS est calculée uniquement dans votre téléphone. Si vous envoyez un signalement, votre position est automatiquement "floutée" à environ 100 mètres près. Impossible de savoir exactement d'où vous avez cliqué.
 
-### A. Moteur de consensus local & suppression dynamique (TTL)
-- **Algorithme de seuil (Consensus)** :
-  - Un signalement individuel émis par un utilisateur n'est pas affiché immédiatement à la foule pour éliminer trolls et fausses rumeurs.
-  - Le marqueur n'apparaît publiquement que si **au moins 2 à 3 signalements** de même catégorie sont émis dans un rayon géographique de **100 mètres** sur une fenêtre glissante de **5 minutes**.
-- **Durée de vie (TTL) dynamique** :
-  - Si le cortège est déclaré `MOBILE` : le marqueur disparaît après **5 minutes**.
-  - Si le cortège est déclaré `IMMOBILE` : le marqueur disparaît après **10 minutes**.
-  - À expiration, le marqueur est purgé de la mémoire vive de l'application sans laisser la moindre trace.
+### 4. 📻 Rien n'est enregistré sur un serveur
+Contrairement aux applications classiques qui gardent tout dans des bases de données :
+- LegalMaps fonctionne comme un **talkie-walkie** : l'information passe dans l'air d'un téléphone à l'autre en direct, puis disparaît.
+- **Rien n'est gravé dans le marbre** : aucun historique n'est stocké sur un disque dur. Si le serveur s'éteint, il n'y a aucune donnée à récupérer.
 
-### B. Gestion cryptographique du cortège officiel
-- Accès discret sans compte utilisateur : `/admin#priv=CLE_PRIVEE_HEX`.
-- Commandes organisateur :
-  1. Bascule du statut : bouton `Cortège Mobile` / `Cortège Immobile`.
-  2. Placement ou déplacement sur la carte de la `Tête de cortège` et de la `Fin de cortège`.
-  3. Signature Ed25519 et diffusion sur le canal prioritaire `cortege-state`.
-
-### C. Fiches réflexes 100 % hors-ligne
-Accessibles via le bouton permanent **Droits & Secours** :
-- **Garde à vue (GAV)** : Droit strict au silence ("Je n'ai rien à déclarer"), avocat commis d'office dès la 1ère heure (Barreau de Nantes : 02 40 20 48 40), médecin, appel à un proche.
-- **Contrôles dans l'espace public** : Art. 78-2 du CPP, palpations de sécurité, fouilles de sacs, droit de filmer la police.
-- **Premiers secours & Gaz lacrymogènes** : Décontamination oculaire (sérum phy uniquement, ne jamais frotter), retrait des lentilles, numéros d'urgence (15, 18, 112, 114).
+### 5. 🤖 Le filtre anti-menteurs et anti-trolls
+Pour éviter qu'une personne malveillante ou un robot n'invente de fausses alertes :
+- **Il faut être plusieurs** : Une alerte n'apparaît sur la carte publique que si **au moins 2 à 3 personnes différentes** signalent la même chose au même endroit dans un temps très court. Un clic isolé ne s'affiche jamais.
+- **Effacement automatique express** : Les alertes validées disparaissent toutes seules au bout de **5 à 10 minutes**. Une fois le gaz dissipé ou la rue rouverte, la carte redevient automatiquement propre.
+- **Le péage invisible anti-robots** : Avant d'envoyer un signalement, votre téléphone résout un tout petit calcul mathématique en coulisses (en 0,2 seconde, invisible pour vous). Pour un humain qui clique une fois, c'est immédiat. Mais pour un robot qui voudrait envoyer 10 000 faux signalements d'un coup, son ordinateur surchauffe et se retrouve bloqué net.
 
 ---
 
-## 🛠️ Installation & Démarrage
+## 🗺️ Ce que vous trouvez sur la carte
 
-### 1. Cloner et installer les dépendances
+- **🚩 Le cortège en direct** : Suivez l'emplacement officiel de la **Tête** et de la **Fin** du cortège, ainsi que le tracé officiel actualisé.
+- **💧 L'accès aux besoins vitaux** :
+  - Les fontaines d'eau potable de la ville (pour boire ou se décontaminer).
+  - Les pharmacies ouvertes à proximité.
+  - Les postes de premiers secours bénévoles (Street Medics).
+  - Les toilettes publiques gratuites.
+  - Les 27 lycées de l'agglomération (avec signalement citoyen des blocus pacifiques).
+- **🌬️ La boussole du vent en temps réel** : Une flèche discrète vous indique la direction et la force du vent à Nantes, pour savoir immédiatement dans quelle direction vont dériver les gaz lacrymogènes.
+- **📹 Les caméras de surveillance de la voie publique** : Répertoire complet des caméras publiques (données citoyennes OpenStreetMap / SunderS) pour savoir où la rue est filmée.
+- **📜 Le guide de poche "Droits & Secours" (accessible en un clic)** :
+  - **Garde à vue** : Les réflexes essentiels (droit de garder le silence *"Je n'ai rien à déclarer"*, appel à un avocat commis d'office gratuit, médecin, prévenir un proche).
+  - **Contrôles d'identité** : Ce que la police peut et ne peut pas fouiller (votre sac, votre téléphone), le droit de filmer.
+  - **Secours d'urgence** : Comment réagir face aux gaz (ne pas frotter, rincer au sérum physiologique, retirer ses lentilles) et les numéros à composer.
+
+---
+
+## 📴 Ça marche même sans réseau (100 % Hors-Ligne)
+
+Pendant les grands rassemblements, le réseau 4G/5G sature souvent ou peut être brouillé.
+
+**LegalMaps est conçue pour fonctionner même si vous coupez complètement Internet :**
+- Dès votre première visite sur le site, votre téléphone enregistre discrètement en mémoire la carte complète de Nantes, les fiches juridiques et la liste des pharmacies/fontaines.
+- Si le réseau tombe, la carte continue de s'afficher, vous pouvez toujours vous géolocaliser, zoomer et lire vos fiches de droits.
+
+---
+
+## 📱 Comment l'installer sur son téléphone (Sans passer par l'App Store ou Google Play)
+
+LegalMaps est une **PWA** (application web directe). Elle ne demande aucune permission abusive et ne prend presque pas de place.
+
+### Sur iPhone / iPad (Safari) :
+1. Ouvrez le lien du site dans **Safari**.
+2. Appuyez sur le bouton **Partager** (le carré avec une flèche qui monte en bas de l'écran).
+3. Faites défiler vers le bas et appuyez sur **« Sur l'écran d'accueil »**.
+4. C'est tout ! L'icône apparaît sur votre téléphone comme une vraie application.
+
+### Sur Android (Chrome ou Firefox) :
+1. Ouvrez le lien dans votre navigateur.
+2. Un bandeau ou une fenêtre vous propose **« Ajouter à l'écran d'accueil »** (ou appuyez sur les 3 petits points en haut à droite puis *« Installer l'application »*).
+3. Confirmez : l'icône s'installe immédiatement.
+
+---
+
+## ⚙️ Comment ça marche sous le capot ? (Pour les curieux)
+
+| Ce que vous voyez | Ce qui se passe vraiment en coulisses (vulgarisé) |
+|---|---|
+| **Pas de compte, rien à remplir** | Zéro cookie d'identification. Aucune base de données ne retient qui vous êtes. |
+| **Le signalement s'envoie en 1 seconde** | Votre appareil résout une micro-énigme mathématique (*Hashcash*) puis diffuse l'alerte sur une onde éphémère (*Supabase Broadcast*). |
+| **Le cortège bouge sur la carte** | Seul l'organisateur possède une "clé numérique infalsifiable" (*Ed25519*) dans son lien secret pour guider le cortège. Personne d'autre ne peut modifier la tête ou la fin. |
+| **La carte s'affiche sans 4G** | La carte de Nantes est stockée dans un seul fichier ultra-léger et compressé (*PMTiles*) directement mis en cache dans votre navigateur (*Service Worker*). |
+| **Les points d'intérêt s'aèrent tout seuls** | À faible zoom, les points proches fusionnent en petites bulles numérotées. À fort zoom, ils s'écartent automatiquement pour ne jamais se superposer. |
+
+---
+
+## 💻 Pour tester ou lancer le projet sur son ordinateur
+
+Si vous êtes développeur ou souhaitez contribuer au code source :
+
+### 1. Télécharger le projet
 ```bash
 git clone https://github.com/legaltoi/legalmap.git
 cd legalmap
 npm install
 ```
 
-### 2. Générer les clés de l'organisateur
-```bash
-node scripts/generate-keys.js
-```
-Copiez la clé publique obtenue dans `.env.local` :
-```env
-NEXT_PUBLIC_ADMIN_VERIFY_KEY=votre_cle_publique_hex
-```
-
-### 3. Lancer en local
+### 2. Démarrer le serveur de test
 ```bash
 npm run dev
 ```
-Rendez-vous sur [http://localhost:3000](http://localhost:3000).
-
-Pour accéder à la console de régulation :
-`http://localhost:3000/admin#priv=VOTRE_CLE_PRIVEE_HEX`.
+Ouvrez ensuite [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
 ---
 
-## 📁 Architecture du Projet
+## ⚖️ Avertissement citoyen
 
-```text
-├── public/
-│   ├── icons/                   # Icônes SVG et PNG (192x192, 512x512)
-│   ├── tiles/
-│   │   └── nantes.pmtiles       # Conteneur cartographique vectoriel local
-│   ├── manifest.json            # Manifeste PWA installable
-│   ├── pow-worker.js            # Web Worker de Preuve de Travail (Hashcash)
-│   └── sw.js                    # Service Worker Offline-First
-├── src/
-│   ├── app/
-│   │   ├── admin/page.tsx       # Console de régulation organisateur (Ed25519)
-│   │   ├── globals.css          # Styles OLED, reset tactile 300ms, animations
-│   │   ├── layout.tsx           # Layout racine PWA
-│   │   └── page.tsx             # Interface principale (Carte + Dock)
-│   ├── components/
-│   │   ├── ActionDock.tsx       # 4 boutons légaux normalisés (PoW intégré, zéro texte)
-│   │   ├── HeaderBar.tsx        # Bandeau cortège, statut réseau et accès fiches
-│   │   ├── LegalNotice.tsx      # Mentions légales strictes Art 6-III-2 LCEN & RGPD
-│   │   ├── LegalSheet.tsx       # Fiches réflexes GAV, 78-2 CPP & Urgences médicales
-│   │   └── MapView.tsx          # Moteur MapLibre GL, consensus animé et POIs Nantes
-│   ├── config/
-│   │   ├── categories.ts        # Définition des 4 états et paramètres algorithmiques
-│   │   └── cities/nantes.json   # Tracé officiel, POIs sanitaires et coordonnées Nantes
-│   ├── hooks/
-│   │   ├── useConsensus.ts      # Moteur d'agrégation spatio-temporelle et purge TTL
-│   │   └── useRealtime.ts       # Supabase Broadcast + validation Zod + PoW + Ed25519
-│   ├── lib/
-│   │   ├── crypto.ts            # Signature et vérification Ed25519 avec anti-rejeu
-│   │   ├── geo.ts               # Formule de Haversine & arrondi GPS 100m
-│   │   ├── pow.ts               # Moteur Hashcash SHA-256 client
-│   │   ├── supabase.ts          # Client Supabase sans persistance
-│   │   └── validation.ts        # Schémas Zod et Bounding Box Nantes
-│   └── types/
-│       └── index.ts             # Typages TypeScript stricts
-├── scripts/
-│   ├── generate-keys.js         # Générateur de paire de clés Ed25519
-│   ├── generate-pmtiles.js      # Générateur d'en-tête PMTiles v3 valide
-│   └── test-engine.js           # 18 tests unitaires validés (Ed25519, PoW, Zod, Geo)
-├── SETUP_SUPABASE.md            # Guide de configuration gratuit sans SQL
-└── README.md
-```
-
----
-
-## ⚖️ Avertissement Légal
-Cette application est un dispositif d'information factuelle, de sécurisation civile et de réduction des risques sanitaires. Elle ne constitue en aucun cas une incitation à des infractions ou attroupements non déclarés.
+*LegalMaps est une initiative citoyenne d'intérêt général, bénévole et indépendante, dédiée à la sécurité des personnes, à la prévention des risques sanitaires et à la diffusion du droit. Elle s'inscrit pleinement dans le cadre des libertés fondamentales garanties par la loi française et la Constitution (liberté d'expression, liberté de circulation et droit à l'information).*
