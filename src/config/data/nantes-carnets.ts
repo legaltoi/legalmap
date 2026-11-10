@@ -72,6 +72,218 @@ export interface HistoricalProtest {
   sources: string;
 }
 
+export interface RecentMobilisationStat {
+  id: string;
+  dateIso: string;
+  dateFormatted: string;
+  year: number;
+  location: string;
+  isNational: boolean;
+  unionOrPressCountText: string;
+  policeOrOfficialCountText: string;
+  contextAndToll: string;
+  highlightBadge?: string;
+  protestersEstimatedMax?: number;
+  arrestsCount?: number;
+  injuredCount?: {
+    police?: number;
+    protesters?: number;
+  };
+  sourcesRef?: string[];
+  coordinates?: [number, number];
+  sectorId?: string;
+}
+
+export const RECENT_MOBILISATIONS_CITATIONS: Record<string, string> = {
+  "[1]": "Nantes Infos — Décompte observatoire indépendant",
+  "[2]": "FSU 44 / ONL (Observatoire Nantais des Libertés)",
+  "[3]": "Nantes Actualité — Synthèse de terrain et forces de l'ordre",
+  "[4]": "Sorties à Nantes — Recensement événementiel",
+  "[5]": "Ministère de l'Intérieur & Préfectures — Bilan officiel national",
+  "[6]": "Contre Attaque — Média indépendant de lutte nantaise",
+  "[7]": "Presse locale nantaise (Ouest-France / Presse Océan)",
+  "[8]": "Comité de mobilisation étudiant — AG Campus Tertre",
+  "[9]": "Communiqué des étudiants occupants du bâtiment Censive",
+  "[12]": "Enquête et fourchette chiffrée Ouest-France",
+  "[13]": "Direction Générale de la Police Nationale / Ministère de l'Intérieur",
+  "[14]": "Assemblée générale des étudiants de Lettres & Sciences Humaines",
+  "[15]": "Préfecture de Loire-Atlantique — Données départementales Nantes/St-Nazaire",
+  "[16]": "Coordination Jeunesse 44 — Appel Acte V",
+  "[17]": "Préfecture 44 & Mairie de Nantes — Bilan officiel et dégâts",
+  "[18]": "Service de police judiciaire — Enquêtes OSINT et vidéos TikTok",
+  "[19]": "Parquet de Nantes — Comparutions immédiates et gardes à vue",
+  "[20]": "Coordination des Street Médics Nantes — Bilans sanitaires et traumatismes",
+  "[21]": "Fédération des commerçants du centre-ville de Nantes (Plein Centre)",
+  "[24]": "Union Départementale CGT Loire-Atlantique",
+  "[25]": "Ministère de l'Intérieur — Bilan consolidé Halloween et mobilisations",
+  "[26]": "Brigade des mineurs et Parquet de Nantes",
+  "[27]": "Arrêtés préfectoraux de périmètre et couvre-feu mineurs",
+};
+
+export const RECENT_MOBILISATIONS_2026: RecentMobilisationStat[] = [
+  {
+    id: "REC-2026-10-06-NTE",
+    dateIso: "2026-10-06",
+    dateFormatted: "6 octobre 2026",
+    year: 2026,
+    location: "Nantes (centre-ville)",
+    isNational: false,
+    unionOrPressCountText: "12 500 manifestants (décompte presse locale)[7]",
+    policeOrOfficialCountText: "Non communiqué dans les sources",
+    contextAndToll: "Cortège jeunesse/enseignants parti du Miroir d'eau[7].",
+    highlightBadge: "Jeunesse / Enseignants",
+    protestersEstimatedMax: 12500,
+    sourcesRef: ["[7]"],
+    coordinates: [-1.54908, 47.21503],
+    sectorId: "miroir-deau",
+  },
+  {
+    id: "REC-2026-10-07-TERTRE",
+    dateIso: "2026-10-07",
+    dateFormatted: "7 octobre 2026",
+    year: 2026,
+    location: "Nantes (Campus Tertre)",
+    isNational: false,
+    unionOrPressCountText: "> 2 000 étudiants en assemblée générale[8][9]",
+    policeOrOfficialCountText: "Non applicable (espace universitaire)",
+    contextAndToll: "Vote du blocage général et occupation de la Censive[9].",
+    highlightBadge: "AG & Occupation Censive",
+    protestersEstimatedMax: 2000,
+    sourcesRef: ["[8]", "[9]"],
+    coordinates: [-1.5532, 47.2435],
+    sectorId: "rectorat-est",
+  },
+  {
+    id: "REC-2026-10-08-NTE",
+    dateIso: "2026-10-08",
+    dateFormatted: "8 octobre 2026",
+    year: 2026,
+    location: "Nantes (centre-ville)",
+    isNational: false,
+    unionOrPressCountText: "6 300 à 10 000 manifestants (fourchette Ouest-France)[12]",
+    policeOrOfficialCountText: "Comptage local non isolé dans les sources",
+    contextAndToll: "Départ Miroir d'eau[12] ; fermetures préventives de 3 campus.",
+    highlightBadge: "Fermetures 3 campus",
+    protestersEstimatedMax: 10000,
+    sourcesRef: ["[12]"],
+    coordinates: [-1.54908, 47.21503],
+    sectorId: "miroir-deau",
+  },
+  {
+    id: "REC-2026-10-08-NAT",
+    dateIso: "2026-10-08",
+    dateFormatted: "8 octobre 2026",
+    year: 2026,
+    location: "France (national)",
+    isNational: true,
+    unionOrPressCountText: "Non spécifié côté intersyndicale nationale",
+    policeOrOfficialCountText: "71 500 manifestants[13]",
+    contextAndToll: "Chiffre officiel consolidé par le ministère de l'Intérieur[13].",
+    highlightBadge: "Chiffre officiel Min. Intérieur",
+    protestersEstimatedMax: 71500,
+    sourcesRef: ["[13]"],
+  },
+  {
+    id: "REC-2026-10-09-NTE",
+    dateIso: "2026-10-09",
+    dateFormatted: "9 octobre 2026",
+    year: 2026,
+    location: "Nantes (centre-ville)",
+    isNational: false,
+    unionOrPressCountText: "~ 1 500 manifestants[14]",
+    policeOrOfficialCountText: "Non communiqué dans les sources",
+    contextAndToll: "AG de 200 à 300 étudiants reconduisant le blocus en lettres[14].",
+    highlightBadge: "Blocus Lettres reconduit",
+    protestersEstimatedMax: 1500,
+    sourcesRef: ["[14]"],
+    coordinates: [-1.55625, 47.21683],
+    sectorId: "cours-50-otages",
+  },
+  {
+    id: "REC-2026-10-13-NTE",
+    dateIso: "2026-10-13",
+    dateFormatted: "13 octobre 2026",
+    year: 2026,
+    location: "Nantes",
+    isNational: false,
+    unionOrPressCountText: "8 500 manifestants[15] (+ 700 à Saint-Nazaire)[15]",
+    policeOrOfficialCountText: "3 interpellations recensées[15]",
+    contextAndToll: "Acte V de la jeunesse[16] ; 9 200 mobilisés en Loire-Atlantique[15].",
+    highlightBadge: "Acte V Jeunesse • 44",
+    protestersEstimatedMax: 9200,
+    arrestsCount: 3,
+    sourcesRef: ["[15]", "[16]"],
+    coordinates: [-1.55785, 47.21335],
+    sectorId: "place-du-commerce",
+  },
+  {
+    id: "REC-2026-10-17-NTE",
+    dateIso: "2026-10-17",
+    dateFormatted: "17 octobre 2026",
+    year: 2026,
+    location: "Nantes",
+    isNational: false,
+    unionOrPressCountText: "20 000 à 50 000 manifestants : • 20 000 (FSU / ONL)[2] • 25 000 (dont 3 000 black blocs, Nantes Actualité)[3] • 25 000 à 30 000 (Sorties à Nantes)[4] • ≥ 30 000 (Nantes Infos)[1] • 50 000 (Contre Attaque)[6]",
+    policeOrOfficialCountText: "20 000 manifestants[5][17] • 31 interpellations à Nantes[5][17] (+ 1 suspect arrêté ultérieurement via vidéos TikTok)[18][19]",
+    contextAndToll: "Bilan humain & violences : • 102 policiers blessés[3] • 37 manifestants touchés par LBD et ~10 par grenades (recensement street médics)[20] • Pillages de commerces (Fnac, Uniqlo, etc.) et dégradations de la mairie[17][21].",
+    highlightBadge: "Pic Nantes • Heurts & LBD",
+    protestersEstimatedMax: 50000,
+    arrestsCount: 32,
+    injuredCount: {
+      police: 102,
+      protesters: 47,
+    },
+    sourcesRef: ["[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[17]", "[18]", "[19]", "[20]", "[21]"],
+    coordinates: [-1.5540, 47.2185],
+    sectorId: "prefecture-erdre",
+  },
+  {
+    id: "REC-2026-10-17-NAT",
+    dateIso: "2026-10-17",
+    dateFormatted: "17 octobre 2026",
+    year: 2026,
+    location: "France (national)",
+    isNational: true,
+    unionOrPressCountText: "~ 800 000 manifestants (selon les organisateurs)[5]",
+    policeOrOfficialCountText: "550 000 manifestants[5]",
+    contextAndToll: "Journée nationale interprofessionnelle, lycéenne et gilets jaunes[5].",
+    highlightBadge: "Journée Nationale Interpro",
+    protestersEstimatedMax: 800000,
+    sourcesRef: ["[5]"],
+  },
+  {
+    id: "REC-2026-10-31-NTE",
+    dateIso: "2026-10-31",
+    dateFormatted: "31 octobre 2026",
+    year: 2026,
+    location: "Nantes",
+    isNational: false,
+    unionOrPressCountText: "8 000 à 15 000 manifestants (estimation CGT révisée en cours de journée)[24]",
+    policeOrOfficialCountText: "Pas de décompte contradictoire de manifestants publié[24] ; 56 interpellations à Nantes (57 en 44)[25]",
+    contextAndToll: "10 mineurs remis à leurs parents[26] ; arrêtés de périmètre et couvre-feu mineurs[27].",
+    highlightBadge: "Halloween • 56 interpellations",
+    protestersEstimatedMax: 15000,
+    arrestsCount: 56,
+    sourcesRef: ["[24]", "[25]", "[26]", "[27]"],
+    coordinates: [-1.55785, 47.21335],
+    sectorId: "place-du-commerce",
+  },
+  {
+    id: "REC-2026-10-31-NAT",
+    dateIso: "2026-10-31",
+    dateFormatted: "31 octobre 2026",
+    year: 2026,
+    location: "France (national)",
+    isNational: true,
+    unionOrPressCountText: "Non spécifié côté intersyndicale nationale",
+    policeOrOfficialCountText: "779 interpellations[25]",
+    contextAndToll: "Chiffre officiel national (cumulant la journée et la nuit d'Halloween)[25].",
+    highlightBadge: "779 Interpellations National",
+    arrestsCount: 779,
+    sourcesRef: ["[25]"],
+  },
+];
+
 export const CARNET_1_MILESTONES: HistoricalMilestone[] = [
   {
     "id": "EVT-01",
@@ -265,6 +477,50 @@ export const CARNET_1_MILESTONES: HistoricalMilestone[] = [
     "medicalToll": "Défilé massif sans violences lourdes signalées",
     "judicialToll": "Délégation de manifestants reçue en sous-préfecture à Saint-Nazaire",
     "sources": "Nantes Infos ; Réseau Média Web (Brest Infos, Angers Infos)",
+    "coordinates": [
+      -1.55785,
+      47.21335
+    ],
+    "sectorId": "place-du-commerce"
+  },
+  {
+    "id": "EVT-10",
+    "dateIso": "2026-10-17",
+    "dateFormatted": "17 oct. 2026",
+    "year": 2026,
+    "badgeLabel": "2026 • Marée humaine & heurts (20k–50k)",
+    "context": "Journée nationale interprofessionnelle, lycéenne et gilets jaunes",
+    "locationText": "Nantes, Miroir d'eau, 50-Otages, Commerce, Préfecture et Mairie",
+    "unionCountText": "20 000 à 50 000 manifestants (FSU/ONL: 20k, Nantes Actu: 25k dont 3k bloc, Nantes Infos: ≥30k, Contre Attaque: 50k)",
+    "policeCountText": "20 000 manifestants selon la Préfecture",
+    "thirdPartyCountText": "~800 000 national syndicats / 550 000 Ministère de l'Intérieur",
+    "fdoTactics": "Dispositif CRS / Gendarmerie mobile massif, tirs de LBD 40 et grenades lacrymogènes",
+    "weaponsUsed": "LBD 40, grenades GM2L / lacrymogènes, canons à eau",
+    "medicalToll": "102 policiers blessés ; 37 manifestants touchés par LBD et ~10 par grenades (recensement street médics)",
+    "judicialToll": "31 interpellations à Nantes (+ 1 arrestation ultérieure TikTok) ; pillages commerces (Fnac, Uniqlo) et mairie dégradée",
+    "sources": "Ouest-France, FSU 44, ONL, Nantes Actualité, Nantes Infos, Street Médics, Ministère de l'Intérieur",
+    "coordinates": [
+      -1.554,
+      47.2185
+    ],
+    "sectorId": "prefecture-erdre"
+  },
+  {
+    "id": "EVT-11",
+    "dateIso": "2026-10-31",
+    "dateFormatted": "31 oct. 2026",
+    "year": 2026,
+    "badgeLabel": "2026 • Halloween & Couvre-feu (8k–15k)",
+    "context": "Mobilisation d'Halloween, cortèges nocturnes et contestation",
+    "locationText": "Nantes, hypercentre, Place Royale, Commerce et boulevards",
+    "unionCountText": "8 000 à 15 000 manifestants (estimation CGT révisée)",
+    "policeCountText": "Pas de décompte contradictoire de manifestants publié",
+    "thirdPartyCountText": "779 interpellations au niveau national (journée + nuit)",
+    "fdoTactics": "Périmètres d'interdiction préfectoraux stricts, contrôle d'identité systématique",
+    "weaponsUsed": "Moyens de contrôle de zone, dispersion lacrymogène",
+    "medicalToll": "Tensions nocturnes et heurts épars en centre-ville",
+    "judicialToll": "56 interpellations à Nantes (57 en 44) dont 10 mineurs remis à leurs parents ; arrêtés de périmètre et couvre-feu mineurs",
+    "sources": "CGT 44, Ministère de l'Intérieur, Préfecture de Loire-Atlantique, Presse Océan",
     "coordinates": [
       -1.55785,
       47.21335
@@ -4165,5 +4421,50 @@ export const CARNET_3_PROTESTS: HistoricalProtest[] = [
     "ratio": 2.68,
     "tensionLevel": "Forte",
     "sources": "France 3, Ouest-France, Intersyndicale"
+  },
+  {
+    "id": "NTE-076",
+    "dateIso": "2026-10-06",
+    "dateFormatted": "6 oct. 2026",
+    "year": 2026,
+    "cycle": "Automne 2026",
+    "title": "Cortège jeunesse & enseignants",
+    "route": "Miroir d'eau -> 50 Otages -> Commerce",
+    "policeCount": 8000,
+    "unionCount": 12500,
+    "absoluteGap": 4500,
+    "ratio": 1.56,
+    "tensionLevel": "Modérée",
+    "sources": "Presse locale, Ouest-France"
+  },
+  {
+    "id": "NTE-077",
+    "dateIso": "2026-10-17",
+    "dateFormatted": "17 oct. 2026",
+    "year": 2026,
+    "cycle": "Automne 2026",
+    "title": "Journée nationale interprofessionnelle & lycéenne",
+    "route": "Miroir d'eau -> 50 Otages -> Préfecture -> Commerce",
+    "policeCount": 20000,
+    "unionCount": 35000,
+    "absoluteGap": 15000,
+    "ratio": 1.75,
+    "tensionLevel": "Très forte",
+    "sources": "FSU, Préfecture, Nantes Actualité, Street Médics"
+  },
+  {
+    "id": "NTE-078",
+    "dateIso": "2026-10-31",
+    "dateFormatted": "31 oct. 2026",
+    "year": 2026,
+    "cycle": "Automne 2026",
+    "title": "Mobilisation Halloween & couvre-feu",
+    "route": "Commerce -> Place Royale -> 50 Otages",
+    "policeCount": 6000,
+    "unionCount": 11500,
+    "absoluteGap": 5500,
+    "ratio": 1.92,
+    "tensionLevel": "Forte",
+    "sources": "CGT 44, Préfecture 44, Ministère de l'Intérieur"
   }
 ];

@@ -77,9 +77,9 @@ export default function HomePage() {
   const [isLegalSheetOpen, setIsLegalSheetOpen] = useState(false);
   const [isLegalNoticeOpen, setIsLegalNoticeOpen] = useState(false);
   const [isObservatoryOpen, setIsObservatoryOpen] = useState(false);
-  const [observatoryInitialTab, setObservatoryInitialTab] = useState<ObservatoryTab>("route");
+  const [observatoryInitialTab, setObservatoryInitialTab] = useState<ObservatoryTab>("recent");
 
-  const handleOpenObservatory = useCallback((tab: ObservatoryTab = "route") => {
+  const handleOpenObservatory = useCallback((tab: ObservatoryTab = "recent") => {
     setObservatoryInitialTab(tab);
     setIsObservatoryOpen(true);
   }, []);
@@ -184,7 +184,7 @@ export default function HomePage() {
         pendingCount={pendingCount}
         onOpenLegalSheet={() => setIsLegalSheetOpen(true)}
         onOpenLegalNotice={() => setIsLegalNoticeOpen(true)}
-        onOpenObservatory={() => handleOpenObservatory("stats")}
+        onOpenObservatory={() => handleOpenObservatory("recent")}
         onRecenterCity={() => {
           const event = new CustomEvent("recenter-nantes");
           window.dispatchEvent(event);
